@@ -1,0 +1,17 @@
+{
+  "name": "Forma",
+  "short_name": "Forma",
+  "description": "Gamified body-recomposition tracker",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#15121d",
+  "theme_color": "#15121d",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
