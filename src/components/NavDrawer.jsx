@@ -3,7 +3,7 @@ import { Icon } from "./ui.jsx";
 
 const ITEMS = [
   { id: "profile", label: "Character", icon: "user-bolt" },
-  { id: "measurements", label: "Body", icon: "ruler-2" },
+  { id: "dojo", label: "The Dojo", icon: "karate" },
   { id: "history", label: "History", icon: "calendar-stats" },
   { id: "settings", label: "Settings", icon: "settings" },
 ];

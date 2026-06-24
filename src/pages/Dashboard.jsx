@@ -64,7 +64,7 @@ export default function Dashboard({ state, go, onMenu }) {
       ) : null}
 
       {measurementDue(state) && (
-        <motion.button onClick={() => go("measurements")} {...fade(1)} style={{ width: "100%", textAlign: "left", marginBottom: 14 }}>
+        <motion.button onClick={() => go("profile")} {...fade(1)} style={{ width: "100%", textAlign: "left", marginBottom: 14 }}>
           <div className="card glass" style={{ display: "flex", alignItems: "center", gap: 11, border: "none" }}>
             <Icon name="ruler-2" size={18} style={{ color: "var(--violet)", flexShrink: 0 }} />
             <div style={{ flex: 1, fontSize: 12.5, color: "var(--text)" }}>Monthly check-in — time to log your measurements.</div>

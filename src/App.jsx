@@ -12,7 +12,7 @@ import ProgressPage from "./pages/ProgressPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import AchievementsPage from "./pages/AchievementsPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
-import MeasurementsPage from "./pages/MeasurementsPage.jsx";
+import TrainingPage from "./pages/TrainingPage.jsx";
 import { registerSW, showNotification } from "./lib/notify.js";
 
 export default function App() {
@@ -77,12 +77,12 @@ export default function App() {
     dashboard: <Dashboard state={state} go={go} onMenu={onMenu} />,
     gym: <GymPage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
     protein: <ProteinPage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
-    profile: <ProfilePage state={state} update={update} go={go} onMenu={onMenu} />,
+    profile: <ProfilePage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
     progress: <ProgressPage state={state} go={go} onMenu={onMenu} />,
     history: <HistoryPage state={state} go={go} onMenu={onMenu} />,
     achievements: <AchievementsPage state={state} go={go} onMenu={onMenu} />,
     settings: <SettingsPage state={state} update={update} replace={replace} go={go} onMenu={onMenu} celebrate={showToast} />,
-    measurements: <MeasurementsPage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
+    dojo: <TrainingPage state={state} update={update} go={go} onMenu={onMenu} />,
   };
 
   const isHub = view === "dashboard";

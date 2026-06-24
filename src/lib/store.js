@@ -65,6 +65,11 @@ export function addDays(dateStr, n) {
   d.setDate(d.getDate() + n);
   return isoLocal(d);
 }
+export function clamp(v, min, max) {
+  const n = Number(v);
+  if (isNaN(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
 export function weekKey(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
   const day = (d.getDay() + 6) % 7;
@@ -135,17 +140,21 @@ export function levelName(level) {
 
 // ---- Protein target driven by ALL profile factors ----
 export function recommendedMultiplier(p) {
+  // Goal sets the base g/kg (evidence ranges below); modifiers nudge within them.
   const base = { recomp: 2.0, cut: 2.4, maintain: 1.6, bulk: 1.8 }[p.goal] ?? 1.8;
   let m = base;
+  // Training load: more activity -> slightly higher needs
   m += { light: -0.1, moderate: 0, active: 0.15 }[p.activity] ?? 0;
+  // Age: anabolic resistance rises with age
   const age = Number(p.age) || 30;
   if (age >= 50) m += 0.2; else if (age >= 40) m += 0.1; else if (age >= 30) m += 0.05;
+  // BMI: per-total-kg overestimates at high body fat, underestimates when very lean
   const h = (Number(p.height) || 180) / 100;
   const w = Number(p.weight) || 80;
-  const bmi = w / (h * h);
+  const bmi = h > 0 ? w / (h * h) : 22;
   if (bmi >= 30) m -= 0.2; else if (bmi >= 27) m -= 0.1; else if (bmi < 20) m += 0.1;
-  if (p.sex === "Female") m -= 0.05;
-  return Math.round(Math.max(1.4, Math.min(3.1, m)) * 10) / 10;
+  const clamped = Math.max(1.4, Math.min(3.1, m));
+  return Math.round(clamped * 10 + 1e-6) / 10;
 }
 export function effectiveMultiplier(profile) {
   return profile.autoProtein === false ? profile.multiplier : recommendedMultiplier(profile);
@@ -157,9 +166,10 @@ export function proteinTarget(profile) {
 export function dayProtein(state, date) {
   const entry = state.protein[date];
   if (!entry) return 0;
-  return Object.entries(entry).reduce((sum, [id, servings]) => {
+  return Object.entries(entry).reduce((sum, [id, val]) => {
+    if (id === "_custom") return sum + (Number(val) || 0);
     const src = state.sources.find((s) => s.id === id);
-    return sum + (src ? src.avg * servings : 0);
+    return sum + (src ? src.avg * val : 0);
   }, 0);
 }
 export function gymThisWeek(state, date = today()) {

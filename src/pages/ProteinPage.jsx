@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Icon, CountUp } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
-import { today, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES } from "../lib/store.js";
+import { today, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp } from "../lib/store.js";
 
 export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [search, setSearch] = useState("");
@@ -11,6 +11,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: "", avg: "", unit: "", type: "Meat" });
+  const [customG, setCustomG] = useState("");
 
   const target = proteinTarget(state.profile);
   const total = Math.round(dayProtein(state, today()));
@@ -44,8 +45,20 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
     update((s) => { if (!s.protein[today()]) s.protein[today()] = {}; picks.forEach((p) => { s.protein[today()][p.id] = (s.protein[today()][p.id] || 0) + p.servings; }); return s; });
     celebrate("win", wasUnder ? "Gap closed · sources added" : "Sources added");
   }
+  const customNow = entry._custom || 0;
+  function addCustom() {
+    if (customG === "" || isNaN(parseFloat(customG))) return;
+    const g = clamp(parseFloat(customG), 1, 300);
+    const wasUnder = total < target;
+    update((s) => { if (!s.protein[today()]) s.protein[today()] = {}; s.protein[today()]._custom = (s.protein[today()]._custom || 0) + g; return s; });
+    setCustomG("");
+    if (wasUnder && total + g >= target) celebrate("win", "Protein target hit · +45 XP");
+  }
+  function clearCustom() {
+    update((s) => { if (s.protein[today()]) { delete s.protein[today()]._custom; if (Object.keys(s.protein[today()]).length === 0) delete s.protein[today()]; } return s; });
+  }
   function updateSource(id, field, value) {
-    update((s) => { const src = s.sources.find((x) => x.id === id); if (src) { if (field === "avg") src.avg = Math.max(0, Math.round(parseFloat(value) || 0)); else src[field] = value; } return s; });
+    update((s) => { const src = s.sources.find((x) => x.id === id); if (src) { if (field === "avg") src.avg = clamp(Math.round(parseFloat(value) || 0), 0, 300); else src[field] = value; } return s; });
   }
   function removeSource(id) {
     update((s) => { s.sources = s.sources.filter((x) => x.id !== id); if (s.protein[today()]) delete s.protein[today()][id]; return s; });
@@ -53,7 +66,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   function addSource() {
     const avg = parseFloat(draft.avg);
     if (!draft.name.trim() || !avg) return;
-    update((s) => { s.sources.push({ id: "c" + Date.now(), name: draft.name.trim(), avg: Math.round(avg), unit: draft.unit.trim() || "serving", type: draft.type }); return s; });
+    update((s) => { s.sources.push({ id: "c" + Date.now(), name: draft.name.trim(), avg: clamp(Math.round(avg), 1, 300), unit: draft.unit.trim() || "serving", type: draft.type }); return s; });
     setDraft({ name: "", avg: "", unit: "", type: "Meat" }); setAdding(false);
   }
 
@@ -97,6 +110,21 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
           </div>
         );
       })()}
+
+      <div className="section-label">One-off entry · today only</div>
+      <div className="card">
+        <div style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 9, lineHeight: 1.4 }}>Ate something without a clear source? Add the grams just for today.</div>
+        <div style={{ display: "flex", gap: 9 }}>
+          <input className="input" type="number" inputMode="numeric" min={1} max={300} placeholder="e.g. 24" value={customG} onChange={(e) => setCustomG(e.target.value)} />
+          <button onClick={addCustom} style={{ padding: "0 20px", flexShrink: 0, borderRadius: "var(--r-md)", background: "var(--violet)", color: "#fff", fontFamily: "var(--display)", fontWeight: 600, fontSize: 14 }}>Add</button>
+        </div>
+        {customNow > 0 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 11, padding: "9px 12px", background: "var(--violet-soft)", borderRadius: "var(--r-md)" }}>
+            <span style={{ fontSize: 12.5, color: "var(--text)" }}><b>{customNow}g</b> one-off added today</span>
+            <button onClick={clearCustom} aria-label="Clear one-off" style={{ color: "var(--text-2)", display: "flex" }}><Icon name="x" size={16} /></button>
+          </div>
+        )}
+      </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 2px 12px" }}>
         <span style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 12, letterSpacing: "0.04em", color: "var(--text-2)" }}>Your sources</span>
