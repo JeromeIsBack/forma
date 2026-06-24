@@ -164,6 +164,61 @@ export function maxWeeklySplits(state) {
   return max;
 }
 
+export function proteinStreak(state) {
+  const t = proteinTarget(state.profile);
+  const hit = (d) => state.protein[d] && dayProtein(state, d) >= t;
+  let cursor = today();
+  if (!hit(cursor)) cursor = addDays(cursor, -1);
+  let s = 0;
+  while (hit(cursor)) { s += 1; cursor = addDays(cursor, -1); }
+  return s;
+}
+export function weekendSessions(state) {
+  return Object.keys(state.gym).filter((d) => {
+    const day = new Date(d + "T00:00:00").getDay();
+    return day === 0 || day === 6;
+  }).length;
+}
+export function perfectDays(state) {
+  const t = proteinTarget(state.profile);
+  return Object.keys(state.gym).filter((d) => state.protein[d] && dayProtein(state, d) >= t).length;
+}
+
+// Smart (no-AI) suggestion: greedily compose a combo from the user's own
+// sources to close today's remaining protein gap. Returns null if already hit.
+export function suggestProtein(state, date = today()) {
+  const target = proteinTarget(state.profile);
+  const have = dayProtein(state, date);
+  const gap = target - have;
+  if (gap <= 0) return null;
+
+  const sources = [...state.sources].filter((s) => s.avg > 0).sort((a, b) => b.avg - a.avg);
+  if (!sources.length) return null;
+
+  let remaining = gap;
+  const picks = [];
+  for (const src of sources) {
+    if (remaining <= 5 || picks.length >= 3) break;
+    let n = Math.min(Math.floor(remaining / src.avg), 3);
+    if (n > 0) {
+      picks.push({ id: src.id, name: src.name, servings: n, grams: n * src.avg });
+      remaining -= n * src.avg;
+    }
+  }
+  // Top up if still meaningfully short: prefer the smallest source that covers it
+  if (remaining > 5) {
+    const asc = [...sources].sort((a, b) => a.avg - b.avg);
+    const fit = asc.find((s) => s.avg >= remaining) || sources[0];
+    const existing = picks.find((p) => p.id === fit.id);
+    if (existing) { existing.servings += 1; existing.grams += fit.avg; }
+    else picks.push({ id: fit.id, name: fit.name, servings: 1, grams: fit.avg });
+    remaining -= fit.avg;
+  }
+
+  const added = picks.reduce((s, p) => s + p.grams, 0);
+  return { picks, added, gap, after: Math.round(have + added) };
+}
+
 // ---- Tiered, lore-themed achievements ----
 export const TIERS = [
   { name: "Bronze", color: "#C77B3A" },
@@ -215,6 +270,24 @@ export const ACHIEVEMENTS = [
     thresholds: [2, 3, 4, 5, 6], measure: (s) => maxWeeklySplits(s),
     lore: "Only the Avatar can master all the elements: water, earth, fire and air.",
     how: "Train different splits within a single week. Hit more unique splits in one week to rank up.",
+  },
+  {
+    id: "worthy", name: "Worthy", saga: "Marvel", icon: "hammer", unit: "day protein streak",
+    thresholds: [3, 7, 14, 30, 60], measure: (s) => proteinStreak(s),
+    lore: "Whosoever proves worthy, hitting their protein day after day, shall hold the power of Mjolnir.",
+    how: "Hit your protein target on consecutive days. Miss a day and the streak resets.",
+  },
+  {
+    id: "witcher", name: "Toss a Coin", saga: "The Witcher", icon: "coin", unit: "weekend sessions",
+    thresholds: [1, 5, 15, 30, 60], measure: (s) => weekendSessions(s),
+    lore: "O Valley of Plenty. A Witcher takes every contract, weekends included.",
+    how: "Train on Saturdays or Sundays. Every weekend session counts toward this contract.",
+  },
+  {
+    id: "bazinga", name: "Bazinga!", saga: "The Big Bang Theory", icon: "atom", unit: "perfect days",
+    thresholds: [1, 5, 15, 40, 100], measure: (s) => perfectDays(s),
+    lore: "Sheldon's signature gotcha. A perfect day: trained AND fully fuelled.",
+    how: "Log a gym session and hit your protein target on the same day.",
   },
 ];
 

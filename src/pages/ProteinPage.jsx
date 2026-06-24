@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Icon, CountUp } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
-import { today, dayProtein, proteinTarget } from "../lib/store.js";
+import { today, dayProtein, proteinTarget, suggestProtein } from "../lib/store.js";
 
 export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [adding, setAdding] = useState(false);
@@ -42,6 +42,18 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
     if (wasUnder && projected >= target) celebrate("win", "Protein target hit · +45 XP");
   }
 
+  function addSuggestion(picks) {
+    const wasUnder = total < target;
+    update((s) => {
+      if (!s.protein[today()]) s.protein[today()] = {};
+      picks.forEach((p) => {
+        s.protein[today()][p.id] = (s.protein[today()][p.id] || 0) + p.servings;
+      });
+      return s;
+    });
+    celebrate("win", wasUnder ? "Gap closed · sources added" : "Sources added");
+  }
+
   function addSource() {
     const avg = parseFloat(draftAvg);
     if (!draftName.trim() || !avg) return;
@@ -78,6 +90,32 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
             ? "Target smashed. A pre-sleep skyr or casein serving aids overnight recovery."
             : `${target - total}g to go — a whey scoop is ~25g, 100g chicken ~30g.`} />
       </div>
+
+      {(() => {
+        const sug = suggestProtein(state);
+        if (!sug || !sug.picks.length) return null;
+        return (
+          <div className="card glass" style={{ marginBottom: 4, padding: "14px 15px", border: "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+              <Icon name="bulb" size={15} style={{ color: "var(--lime-deep)" }} />
+              <span style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 11, letterSpacing: "0.06em", color: "var(--lime-deep)", textTransform: "uppercase" }}>
+                Close the gap · {sug.gap}g to go
+              </span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+              {sug.picks.map((p, i) => (
+                <span key={p.id} style={{ fontSize: 12.5, color: "var(--text)", background: "var(--cloud)", border: "1px solid var(--line)", padding: "5px 10px", borderRadius: 99 }}>
+                  {p.servings % 1 === 0 ? p.servings : p.servings.toFixed(1)}× {p.name}
+                </span>
+              ))}
+            </div>
+            <button onClick={() => addSuggestion(sug.picks)}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: 12, borderRadius: "var(--r-md)", background: "var(--lime)", color: "#2c3a00", fontFamily: "var(--display)", fontWeight: 600, fontSize: 13.5 }}>
+              <Icon name="plus" size={16} /> Add to today (≈{sug.after}g)
+            </button>
+          </div>
+        );
+      })()}
 
       <div className="section-label">Your sources</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>

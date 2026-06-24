@@ -2,11 +2,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "./ui.jsx";
 
 const ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: "layout-dashboard" },
-  { id: "gym", label: "Gym", icon: "barbell" },
-  { id: "protein", label: "Protein", icon: "meat" },
-  { id: "progress", label: "Progress", icon: "chart-line" },
-  { id: "achievements", label: "Achievements", icon: "trophy" },
   { id: "profile", label: "Profile", icon: "user" },
   { id: "history", label: "History", icon: "calendar-stats" },
 ];
