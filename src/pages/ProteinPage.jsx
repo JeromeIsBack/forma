@@ -73,7 +73,10 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
       </div>
 
       <div style={{ marginBottom: 4 }}>
-        <GoalCoach goal={state.profile.goal} context="protein" />
+        <GoalCoach goal={state.profile.goal} context="protein"
+          note={total >= target
+            ? "Target smashed. A pre-sleep skyr or casein serving aids overnight recovery."
+            : `${target - total}g to go — a whey scoop is ~25g, 100g chicken ~30g.`} />
       </div>
 
       <div className="section-label">Your sources</div>

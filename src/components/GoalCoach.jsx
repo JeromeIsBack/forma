@@ -1,43 +1,40 @@
 import { useState } from "react";
 import { Icon } from "./ui.jsx";
-import { goalGuide } from "../data/goals.js";
+import { goalGuide, rotatingTip } from "../data/goals.js";
 
 // context: "protein" | "training" | "pace"
-export function GoalCoach({ goal, context, onChangeGoal }) {
+// note: optional situational string computed live from the user's progress
+export function GoalCoach({ goal, context, note }) {
   const g = goalGuide(goal);
-  const tip = g.tips[context];
+  const tip = rotatingTip(goal, context);
   const [open, setOpen] = useState(false);
   if (!tip) return null;
 
   return (
-    <div
-      className="card"
-      style={{
-        padding: 0,
-        overflow: "hidden",
-        border: "none",
-        background: "var(--paper)",
-        boxShadow: "0 1px 0 var(--line)",
-      }}
-    >
+    <div className="card glass" style={{ padding: 0, overflow: "hidden", border: "none" }}>
       <div style={{ display: "flex" }}>
         <div style={{ width: 4, background: g.color, flexShrink: 0 }} />
         <div style={{ padding: "13px 15px", flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 7 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
             <Icon name="target-arrow" size={14} style={{ color: g.color }} />
             <span style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 11, letterSpacing: "0.06em", color: g.color, textTransform: "uppercase" }}>
               Game plan · {g.label}
             </span>
           </div>
 
+          {note && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 10, padding: "9px 11px", borderRadius: "var(--r-md)", background: g.color + "14" }}>
+              <Icon name="bolt" size={14} style={{ color: g.color, marginTop: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: 12.5, lineHeight: 1.4, color: "var(--text)" }}>{note}</span>
+            </div>
+          )}
+
           <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14, lineHeight: 1.35, color: "var(--text)" }}>
             {tip.punch}
           </div>
 
-          <button
-            onClick={() => setOpen((o) => !o)}
-            style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, fontSize: 12, fontWeight: 600, color: "var(--text-2)" }}
-          >
+          <button onClick={() => setOpen((o) => !o)}
+            style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, fontSize: 12, fontWeight: 600, color: "var(--text-2)" }}>
             <Icon name={open ? "chevron-up" : "chevron-down"} size={14} />
             {open ? "Hide the science" : "Why this works"}
           </button>

@@ -6,6 +6,7 @@ const ITEMS = [
   { id: "gym", label: "Gym", icon: "barbell" },
   { id: "protein", label: "Protein", icon: "meat" },
   { id: "progress", label: "Progress", icon: "chart-line" },
+  { id: "achievements", label: "Achievements", icon: "trophy" },
   { id: "profile", label: "Profile", icon: "user" },
   { id: "history", label: "History", icon: "calendar-stats" },
 ];

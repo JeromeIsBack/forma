@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { CountUp, Ring, Icon } from "../components/ui.jsx";
 import { MenuButton } from "../components/NavDrawer.jsx";
 import {
-  today, weekKey, dayProtein, gymThisWeek, gymStreak,
+  today, weekKey, addDays, dayProtein, gymThisWeek, gymStreak,
   proteinTarget, levelFromXp, levelName, weeklyTarget,
   ACHIEVEMENTS, tierFor,
 } from "../lib/store.js";
@@ -17,9 +17,7 @@ function weekDays(state) {
   const wk = weekKey(today());
   const out = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(wk + "T00:00:00");
-    d.setDate(d.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = addDays(wk, i);
     out.push({
       letter: ["M", "T", "W", "T", "F", "S", "S"][i],
       iso,
@@ -117,7 +115,7 @@ export default function Dashboard({ state, go, onMenu }) {
         </div>
       </motion.div>
 
-      <motion.button {...fade(5)} onClick={() => go("progress")} style={{ width: "100%", textAlign: "left" }}>
+      <motion.button {...fade(5)} onClick={() => go("achievements")} style={{ width: "100%", textAlign: "left" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 2px 12px" }}>
           <div className="eyebrow">Achievements</div>
           <span style={{ fontSize: 11, color: "var(--violet)", fontWeight: 600 }}>View all <Icon name="chevron-right" size={11} style={{ verticalAlign: -1 }} /></span>

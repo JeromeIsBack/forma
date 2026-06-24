@@ -12,6 +12,12 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
   const todaySplit = state.gym[today()];
   const rotation = splits.map((s) => s.id);
 
+  const gymNote = sessions >= target
+    ? "Week complete — extra sessions still earn XP and keep your streak alive."
+    : sessions === target - 1
+      ? "One more session locks in the week."
+      : `${target - sessions} sessions to go to hit this week's goal.`;
+
   const logged = Object.keys(state.gym).filter((d) => weekKey(d) === weekKey(today())).sort();
   const lastSplit = Object.keys(state.gym).sort().reverse().map((d) => state.gym[d])[0];
   const nextSplit = lastSplit && rotation.includes(lastSplit)
@@ -45,7 +51,7 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
         </div>
       </div>
 
-      <GoalCoach goal={state.profile.goal} context="training" />
+      <GoalCoach goal={state.profile.goal} context="training" note={gymNote} />
 
       <div className="section-label">{todaySplit ? "Logged today" : "Log today's session"}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

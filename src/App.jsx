@@ -3,12 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useStore, levelFromXp, totalTierScore } from "./lib/store.js";
 import { burst, Icon } from "./components/ui.jsx";
 import { NavDrawer } from "./components/NavDrawer.jsx";
+import { BottomNav } from "./components/BottomNav.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import GymPage from "./pages/GymPage.jsx";
 import ProteinPage from "./pages/ProteinPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ProgressPage from "./pages/ProgressPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
+import AchievementsPage from "./pages/AchievementsPage.jsx";
 
 export default function App() {
   const [state, update] = useStore();
@@ -50,6 +52,7 @@ export default function App() {
     profile: <ProfilePage state={state} update={update} go={go} onMenu={onMenu} />,
     progress: <ProgressPage state={state} go={go} onMenu={onMenu} />,
     history: <HistoryPage state={state} go={go} onMenu={onMenu} />,
+    achievements: <AchievementsPage state={state} go={go} onMenu={onMenu} />,
   };
 
   const isHub = view === "dashboard";
@@ -67,6 +70,8 @@ export default function App() {
       </AnimatePresence>
 
       <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} go={go} current={view} />
+
+      <BottomNav current={view} go={go} />
 
       <AnimatePresence>
         {toast && (
