@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "./ui.jsx";
-import { MEASUREMENT_METRICS, lastMeasurement, measurementDue, today, daysBetween, clamp } from "../lib/store.js";
+import { MEASUREMENT_METRICS, lastMeasurement, measurementDue, today, daysBetween } from "../lib/store.js";
 
 const RANGE = { bodyfat: [2, 60], default: [1, 300] };
 
@@ -11,6 +11,7 @@ export function MeasurementsSection({ state, update, celebrate }) {
   const prev = entries.length > 1 ? entries[entries.length - 2] : null;
   const due = measurementDue(state);
 
+  const [warn, setWarn] = useState("");
   const [draft, setDraft] = useState(() => {
     const d = {};
     metrics.forEach((m) => { d[m.id] = last && last.values[m.id] != null ? String(last.values[m.id]) : ""; });
@@ -19,12 +20,16 @@ export function MeasurementsSection({ state, update, celebrate }) {
 
   function save() {
     const values = {};
+    let outOfRange = false;
     metrics.forEach((m) => {
       if (draft[m.id] === "" || draft[m.id] == null) return;
       const [min, max] = RANGE[m.id] || RANGE.default;
       const v = parseFloat(draft[m.id]);
-      if (!isNaN(v)) values[m.id] = clamp(v, min, max);
+      if (isNaN(v)) return;
+      if (v < min || v > max) { outOfRange = true; return; }
+      values[m.id] = v;
     });
+    setWarn(outOfRange ? "Some values were outside the allowed range and weren't saved." : "");
     if (!Object.keys(values).length) return;
     update((s) => {
       const arr = (s.measurements || []).filter((e) => e.date !== today());
@@ -88,6 +93,7 @@ export function MeasurementsSection({ state, update, celebrate }) {
         <button className="cta" onClick={save} style={{ marginTop: 14 }}>
           <Icon name="device-floppy" size={16} style={{ verticalAlign: -3, marginRight: 6 }} /> Save measurement
         </button>
+        {warn && <div style={{ fontSize: 11, color: "var(--coral)", marginTop: 8, lineHeight: 1.35 }}>{warn}</div>}
       </div>
 
       {entries.length > 1 && (

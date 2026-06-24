@@ -1,6 +1,7 @@
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { MeasurementsSection } from "../components/MeasurementsSection.jsx";
+import { NumberField } from "../components/NumberField.jsx";
 import { proteinTarget, recommendedMultiplier, effectiveMultiplier, today, clamp } from "../lib/store.js";
 
 const GOALS = [{ id: "recomp", label: "Recomp" }, { id: "cut", label: "Cut" }, { id: "maintain", label: "Maintain" }, { id: "bulk", label: "Bulk" }];
@@ -13,18 +14,12 @@ export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
   const auto = p.autoProtein !== false;
 
   function setField(key, value) { update((s) => { s.profile[key] = value; return s; }); }
-  function setNum(key, value, min, max) {
-    update((s) => { s.profile[key] = value === "" ? "" : clamp(value, min, max); return s; });
-  }
-  function setWeight(value) {
+  function commitWeight(kg) {
     update((s) => {
-      const kg = value === "" ? "" : clamp(value, 30, 300);
       s.profile.weight = kg;
-      if (kg) {
-        const log = s.weightLog.filter((w) => w.date !== today());
-        log.push({ date: today(), kg });
-        s.weightLog = log.sort((a, b) => a.date.localeCompare(b.date));
-      }
+      const log = s.weightLog.filter((w) => w.date !== today());
+      log.push({ date: today(), kg });
+      s.weightLog = log.sort((a, b) => a.date.localeCompare(b.date));
       return s;
     });
   }
@@ -43,9 +38,9 @@ export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
 
       <div className="section-label">Body stats</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
-        <Field label="Body weight (kg)"><input className="input" type="number" inputMode="decimal" min={30} max={300} value={p.weight} onChange={(e) => setWeight(e.target.value)} /></Field>
-        <Field label="Height (cm)"><input className="input" type="number" inputMode="numeric" min={100} max={250} value={p.height} onChange={(e) => setNum("height", e.target.value, 100, 250)} /></Field>
-        <Field label="Age"><input className="input" type="number" inputMode="numeric" min={10} max={100} value={p.age} onChange={(e) => setNum("age", e.target.value, 10, 100)} /></Field>
+        <NumberField label="Body weight (kg)" value={p.weight} min={30} max={300} unit=" kg" onCommit={commitWeight} />
+        <NumberField label="Height (cm)" value={p.height} min={100} max={250} unit=" cm" onCommit={(n) => setField("height", n)} />
+        <NumberField label="Age" value={p.age} min={10} max={100} onCommit={(n) => setField("age", n)} />
         <Field label="Sex"><div className="seg">{["Male", "Female"].map((s) => (<button key={s} className={`seg-opt ${p.sex === s ? "on" : ""}`} onClick={() => setField("sex", s)}>{s}</button>))}</div></Field>
       </div>
 
