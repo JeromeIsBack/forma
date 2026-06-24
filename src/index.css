@@ -48,7 +48,7 @@ body {
 }
 
 .app {
-  padding: calc(20px + env(safe-area-inset-top)) 18px calc(98px + env(safe-area-inset-bottom));
+  padding: 0 18px calc(98px + env(safe-area-inset-bottom));
   min-height: 100vh;
 }
 
@@ -199,3 +199,14 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius
 }
 .navtab:active { transform: scale(0.9); }
 .navtab.on { color: var(--violet); }
+
+/* ---- Sticky glass headers (keep back / burger reachable while scrolling) ---- */
+.page-head, .topbar {
+  position: sticky; top: 0; z-index: 70;
+  margin: 0 -18px 18px;
+  padding: calc(14px + env(safe-area-inset-top)) 18px 13px;
+  background: rgba(251, 250, 247, 0.82);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border-bottom: 1px solid var(--line);
+}

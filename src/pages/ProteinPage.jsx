@@ -3,71 +3,63 @@ import { motion } from "framer-motion";
 import { Icon, CountUp } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
-import { today, dayProtein, proteinTarget, suggestProtein } from "../lib/store.js";
+import { today, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES } from "../lib/store.js";
 
 export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [draftName, setDraftName] = useState("");
-  const [draftAvg, setDraftAvg] = useState("");
-  const [draftUnit, setDraftUnit] = useState("");
+  const [draft, setDraft] = useState({ name: "", avg: "", unit: "", type: "Meat" });
 
   const target = proteinTarget(state.profile);
   const total = Math.round(dayProtein(state, today()));
   const pct = Math.min((total / target) * 100, 100);
   const entry = state.protein[today()] || {};
 
+  const typesPresent = ["All", ...SOURCE_TYPES.filter((t) => state.sources.some((s) => s.type === t))];
+  const q = search.trim().toLowerCase();
+  const filtered = state.sources.filter((s) =>
+    (typeFilter === "All" || s.type === typeFilter) && (!q || s.name.toLowerCase().includes(q))
+  );
+
   function setServings(id, servings) {
     const v = Math.max(0, Math.round(servings * 2) / 2);
     update((s) => {
       if (!s.protein[today()]) s.protein[today()] = {};
-      const before = dayProtein(s, today()) >= target;
-      if (v === 0) delete s.protein[today()][id];
-      else s.protein[today()][id] = v;
+      if (v === 0) delete s.protein[today()][id]; else s.protein[today()][id] = v;
       if (Object.keys(s.protein[today()]).length === 0) delete s.protein[today()];
-      const after = dayProtein(s, today()) >= target;
-      if (!before && after) s._hit = true;
       return s;
     });
-    setTimeout(() => {
-      const t = dayProtein(state, today());
-    }, 0);
   }
-
   function bump(id, delta) {
     const current = entry[id] || 0;
-    const next = current + delta;
     const wasUnder = total < target;
-    setServings(id, next);
+    setServings(id, current + delta);
     const projected = Math.round(dayProtein({ ...state, protein: { ...state.protein, [today()]: { ...entry, [id]: Math.max(0, current + delta) } } }, today()));
     if (wasUnder && projected >= target) celebrate("win", "Protein target hit · +45 XP");
   }
-
   function addSuggestion(picks) {
     const wasUnder = total < target;
-    update((s) => {
-      if (!s.protein[today()]) s.protein[today()] = {};
-      picks.forEach((p) => {
-        s.protein[today()][p.id] = (s.protein[today()][p.id] || 0) + p.servings;
-      });
-      return s;
-    });
+    update((s) => { if (!s.protein[today()]) s.protein[today()] = {}; picks.forEach((p) => { s.protein[today()][p.id] = (s.protein[today()][p.id] || 0) + p.servings; }); return s; });
     celebrate("win", wasUnder ? "Gap closed · sources added" : "Sources added");
   }
-
+  function updateSource(id, field, value) {
+    update((s) => { const src = s.sources.find((x) => x.id === id); if (src) { if (field === "avg") src.avg = Math.max(0, Math.round(parseFloat(value) || 0)); else src[field] = value; } return s; });
+  }
+  function removeSource(id) {
+    update((s) => { s.sources = s.sources.filter((x) => x.id !== id); if (s.protein[today()]) delete s.protein[today()][id]; return s; });
+  }
   function addSource() {
-    const avg = parseFloat(draftAvg);
-    if (!draftName.trim() || !avg) return;
-    const id = "c" + Date.now();
-    update((s) => {
-      s.sources.push({ id, name: draftName.trim(), avg: Math.round(avg), unit: draftUnit.trim() || "serving" });
-      return s;
-    });
-    setDraftName(""); setDraftAvg(""); setDraftUnit(""); setAdding(false);
+    const avg = parseFloat(draft.avg);
+    if (!draft.name.trim() || !avg) return;
+    update((s) => { s.sources.push({ id: "c" + Date.now(), name: draft.name.trim(), avg: Math.round(avg), unit: draft.unit.trim() || "serving", type: draft.type }); return s; });
+    setDraft({ name: "", avg: "", unit: "", type: "Meat" }); setAdding(false);
   }
 
   return (
     <div className="app">
-      <h2 className="sr-only">Protein tracker — log your main sources to reach today's target</h2>
+      <h2 className="sr-only">Protein tracker — log your sources, search, filter and edit them</h2>
       <PageHead go={go} onMenu={onMenu} title="Protein" sub={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} />
 
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff", background: "linear-gradient(140deg,#5b35c9,#3A1D6E)" }}>
@@ -79,16 +71,12 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
           <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             style={{ height: "100%", borderRadius: 99, background: total >= target ? "linear-gradient(90deg,#C6F432,#5DE0C4)" : "#b9aedc" }} />
         </div>
-        <div style={{ fontSize: 11.5, color: "#cabff0", marginTop: 9 }}>
-          {total >= target ? "Target reached — strong day." : `${target - total}g to go`}
-        </div>
+        <div style={{ fontSize: 11.5, color: "#cabff0", marginTop: 9 }}>{total >= target ? "Target reached — strong day." : `${target - total}g to go`}</div>
       </div>
 
       <div style={{ marginBottom: 4 }}>
         <GoalCoach goal={state.profile.goal} context="protein"
-          note={total >= target
-            ? "Target smashed. A pre-sleep skyr or casein serving aids overnight recovery."
-            : `${target - total}g to go — a whey scoop is ~25g, 100g chicken ~30g.`} />
+          note={total >= target ? "Target smashed. A pre-sleep skyr or casein serving aids overnight recovery." : `${target - total}g to go — a whey scoop is ~25g, 100g chicken ~30g.`} />
       </div>
 
       {(() => {
@@ -98,35 +86,68 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
           <div className="card glass" style={{ marginBottom: 4, padding: "14px 15px", border: "none" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
               <Icon name="bulb" size={15} style={{ color: "var(--lime-deep)" }} />
-              <span style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 11, letterSpacing: "0.06em", color: "var(--lime-deep)", textTransform: "uppercase" }}>
-                Close the gap · {sug.gap}g to go
-              </span>
+              <span style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 11, letterSpacing: "0.06em", color: "var(--lime-deep)", textTransform: "uppercase" }}>Close the gap · {sug.gap}g to go</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-              {sug.picks.map((p, i) => (
-                <span key={p.id} style={{ fontSize: 12.5, color: "var(--text)", background: "var(--cloud)", border: "1px solid var(--line)", padding: "5px 10px", borderRadius: 99 }}>
-                  {p.servings % 1 === 0 ? p.servings : p.servings.toFixed(1)}× {p.name}
-                </span>
-              ))}
+              {sug.picks.map((p) => (<span key={p.id} style={{ fontSize: 12.5, color: "var(--text)", background: "var(--cloud)", border: "1px solid var(--line)", padding: "5px 10px", borderRadius: 99 }}>{p.servings % 1 === 0 ? p.servings : p.servings.toFixed(1)}× {p.name}</span>))}
             </div>
-            <button onClick={() => addSuggestion(sug.picks)}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: 12, borderRadius: "var(--r-md)", background: "var(--lime)", color: "#2c3a00", fontFamily: "var(--display)", fontWeight: 600, fontSize: 13.5 }}>
+            <button onClick={() => addSuggestion(sug.picks)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: 12, borderRadius: "var(--r-md)", background: "var(--lime)", color: "#2c3a00", fontFamily: "var(--display)", fontWeight: 600, fontSize: 13.5 }}>
               <Icon name="plus" size={16} /> Add to today (≈{sug.after}g)
             </button>
           </div>
         );
       })()}
 
-      <div className="section-label">Your sources</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 2px 12px" }}>
+        <span style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 12, letterSpacing: "0.04em", color: "var(--text-2)" }}>Your sources</span>
+        <button onClick={() => setEditing((e) => !e)} style={{ fontSize: 12, fontWeight: 600, color: editing ? "var(--violet)" : "var(--text-2)", display: "flex", alignItems: "center", gap: 5 }}>
+          <Icon name={editing ? "check" : "pencil"} size={14} /> {editing ? "Done" : "Edit"}
+        </button>
+      </div>
+
+      <div style={{ position: "relative", marginBottom: 10 }}>
+        <Icon name="search" size={16} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
+        <input className="input" placeholder="Search sources…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ paddingLeft: 38, height: 44, fontSize: 14 }} />
+      </div>
+      <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
+        {typesPresent.map((t) => (
+          <button key={t} onClick={() => setTypeFilter(t)}
+            style={{ flexShrink: 0, padding: "6px 13px", borderRadius: 99, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
+              background: typeFilter === t ? "var(--violet)" : "var(--paper)", color: typeFilter === t ? "#fff" : "var(--text-2)", border: typeFilter === t ? "none" : "1px solid var(--line)" }}>
+            {t}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-        {state.sources.map((src) => {
+        {filtered.length === 0 && <div style={{ fontSize: 13, color: "var(--text-2)", textAlign: "center", padding: "10px 0" }}>No sources match.</div>}
+        {filtered.map((src) => {
           const servings = entry[src.id] || 0;
           const grams = Math.round(src.avg * servings);
+          if (editing) {
+            return (
+              <div key={src.id} className="card" style={{ padding: "11px 13px" }}>
+                <div style={{ display: "flex", gap: 9, alignItems: "center", marginBottom: 8 }}>
+                  <input className="input" value={src.name} onChange={(e) => updateSource(src.id, "name", e.target.value)} style={{ height: 40, fontSize: 13.5 }} />
+                  <button onClick={() => removeSource(src.id)} aria-label="Remove source" style={{ width: 38, height: 38, flexShrink: 0, borderRadius: "var(--r-md)", border: "1px solid var(--line)", color: "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
+                <div style={{ display: "flex", gap: 9 }}>
+                  <input className="input" type="number" inputMode="numeric" value={src.avg} onChange={(e) => updateSource(src.id, "avg", e.target.value)} style={{ height: 40, fontSize: 13.5 }} placeholder="g" />
+                  <input className="input" value={src.unit} onChange={(e) => updateSource(src.id, "unit", e.target.value)} style={{ height: 40, fontSize: 13.5 }} placeholder="unit" />
+                  <select className="input" value={src.type || "Other"} onChange={(e) => updateSource(src.id, "type", e.target.value)} style={{ height: 40, fontSize: 13.5, flexShrink: 0, width: 110 }}>
+                    {SOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+            );
+          }
           return (
             <div key={src.id} className="card" style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 13px", opacity: servings ? 1 : 0.62 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 13.5 }}>{src.name}</div>
-                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>avg {src.avg}g · per {src.unit}</div>
+                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>avg {src.avg}g · per {src.unit} · {src.type}</div>
               </div>
               <div className="num" style={{ fontSize: 14, color: servings ? "var(--violet)" : "var(--text-3)", minWidth: 38, textAlign: "right" }}>{grams}g</div>
               <Stepper value={servings} onMinus={() => bump(src.id, -0.5)} onPlus={() => bump(src.id, 0.5)} />
@@ -138,11 +159,14 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
       {adding ? (
         <div className="card" style={{ marginTop: 12 }}>
           <div className="field-label">New source</div>
-          <input className="input" placeholder="e.g. Tofu" value={draftName} onChange={(e) => setDraftName(e.target.value)} style={{ marginBottom: 9 }} />
-          <div style={{ display: "flex", gap: 9, marginBottom: 11 }}>
-            <input className="input" type="number" inputMode="numeric" placeholder="protein g" value={draftAvg} onChange={(e) => setDraftAvg(e.target.value)} />
-            <input className="input" placeholder="per (unit)" value={draftUnit} onChange={(e) => setDraftUnit(e.target.value)} />
+          <input className="input" placeholder="e.g. Seitan" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} style={{ marginBottom: 9 }} />
+          <div style={{ display: "flex", gap: 9, marginBottom: 9 }}>
+            <input className="input" type="number" inputMode="numeric" placeholder="protein g" value={draft.avg} onChange={(e) => setDraft({ ...draft, avg: e.target.value })} />
+            <input className="input" placeholder="per (unit)" value={draft.unit} onChange={(e) => setDraft({ ...draft, unit: e.target.value })} />
           </div>
+          <select className="input" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value })} style={{ marginBottom: 11 }}>
+            {SOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
           <div style={{ display: "flex", gap: 9 }}>
             <button className="cta lime" onClick={addSource} style={{ boxShadow: "none" }}>Save source</button>
             <button onClick={() => setAdding(false)} style={{ padding: "0 18px", border: "1px solid var(--line-2)", borderRadius: "var(--r-lg)", color: "var(--text-2)" }}>Cancel</button>

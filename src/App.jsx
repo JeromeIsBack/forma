@@ -11,14 +11,15 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import ProgressPage from "./pages/ProgressPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import AchievementsPage from "./pages/AchievementsPage.jsx";
+import SettingsPage from "./pages/SettingsPage.jsx";
 
 export default function App() {
-  const [state, update] = useStore();
+  const [state, update, replace] = useStore();
   const [view, setView] = useState("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
-  const prevLevel = useRef(levelFromXp(state.xp).level);
-  const prevTierScore = useRef(totalTierScore(state));
+  const prevLevel = useRef(null);
+  const prevTierScore = useRef(null);
   const toastTimer = useRef();
 
   function showToast(kind, text) {
@@ -28,19 +29,27 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToast(null), 2600);
   }
 
-  // Level-up celebration
   useEffect(() => {
+    if (!state) return;
     const lvl = levelFromXp(state.xp).level;
-    if (lvl > prevLevel.current) showToast("level", `Level up — you're now level ${lvl}`);
+    if (prevLevel.current !== null && lvl > prevLevel.current) showToast("level", `Level up — you're now level ${lvl}`);
     prevLevel.current = lvl;
-  }, [state.xp]);
+  }, [state && state.xp]);
 
-  // Achievement rank-up celebration
   useEffect(() => {
+    if (!state) return;
     const score = totalTierScore(state);
-    if (score > prevTierScore.current) showToast("level", "Achievement ranked up!");
+    if (prevTierScore.current !== null && score > prevTierScore.current) showToast("level", "Achievement ranked up!");
     prevTierScore.current = score;
   }, [state]);
+
+  if (!state) {
+    return (
+      <div className="app" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+        <div className="logo" style={{ fontSize: 30, opacity: 0.6 }}>FORMA<span className="dot">.</span></div>
+      </div>
+    );
+  }
 
   const go = (v) => setView(v);
   const onMenu = () => setMenuOpen(true);
@@ -53,6 +62,7 @@ export default function App() {
     progress: <ProgressPage state={state} go={go} onMenu={onMenu} />,
     history: <HistoryPage state={state} go={go} onMenu={onMenu} />,
     achievements: <AchievementsPage state={state} go={go} onMenu={onMenu} />,
+    settings: <SettingsPage state={state} update={update} replace={replace} go={go} onMenu={onMenu} celebrate={showToast} />,
   };
 
   const isHub = view === "dashboard";
@@ -70,7 +80,6 @@ export default function App() {
       </AnimatePresence>
 
       <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} go={go} current={view} />
-
       <BottomNav current={view} go={go} />
 
       <AnimatePresence>

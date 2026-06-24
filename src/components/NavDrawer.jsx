@@ -2,8 +2,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "./ui.jsx";
 
 const ITEMS = [
-  { id: "profile", label: "Profile", icon: "user" },
+  { id: "profile", label: "Character", icon: "user-bolt" },
   { id: "history", label: "History", icon: "calendar-stats" },
+  { id: "settings", label: "Settings", icon: "settings" },
 ];
 
 export function MenuButton({ onClick, dark }) {
