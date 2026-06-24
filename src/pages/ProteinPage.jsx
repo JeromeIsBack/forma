@@ -62,7 +62,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
       <h2 className="sr-only">Protein tracker — log your sources, search, filter and edit them</h2>
       <PageHead go={go} onMenu={onMenu} title="Protein" sub={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} />
 
-      <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff", background: "linear-gradient(140deg,#5b35c9,#3A1D6E)" }}>
+      <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff", background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
           <div><CountUp value={total} className="num" style={{ fontSize: 34 }} /><span className="num" style={{ fontSize: 16, color: "#cabff0" }}>g</span></div>
           <div style={{ fontSize: 13, color: "#cabff0" }}>of {target}g</div>

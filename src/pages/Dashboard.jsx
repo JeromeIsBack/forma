@@ -3,7 +3,7 @@ import { CountUp, Ring, Icon } from "../components/ui.jsx";
 import { MenuButton } from "../components/NavDrawer.jsx";
 import {
   today, weekKey, addDays, dayProtein, gymThisWeek, gymStreak,
-  proteinTarget, levelFromXp, levelName, weeklyTarget, ACHIEVEMENTS, tierFor,
+  proteinTarget, levelFromXp, levelName, weeklyTarget, ACHIEVEMENTS, tierFor, measurementDue,
 } from "../lib/store.js";
 
 const fade = (i = 0) => ({
@@ -63,9 +63,19 @@ export default function Dashboard({ state, go, onMenu }) {
         </motion.div>
       ) : null}
 
+      {measurementDue(state) && (
+        <motion.button onClick={() => go("measurements")} {...fade(1)} style={{ width: "100%", textAlign: "left", marginBottom: 14 }}>
+          <div className="card glass" style={{ display: "flex", alignItems: "center", gap: 11, border: "none" }}>
+            <Icon name="ruler-2" size={18} style={{ color: "var(--violet)", flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 12.5, color: "var(--text)" }}>Monthly check-in — time to log your measurements.</div>
+            <Icon name="chevron-right" size={16} style={{ color: "var(--text-3)" }} />
+          </div>
+        </motion.button>
+      )}
+
       <motion.div {...fade(2)}
         style={{ borderRadius: "var(--r-xl)", padding: 22, marginBottom: 14, color: "#fff",
-          background: "linear-gradient(145deg, #3A1D6E 0%, #15121d 72%)", position: "relative", overflow: "hidden" }}>
+          background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))", position: "relative", overflow: "hidden" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--violet)", padding: "6px 13px", borderRadius: 99, fontFamily: "var(--display)", fontWeight: 500, fontSize: 12 }}>
             <Icon name="bolt" size={14} /> LVL {level} · {levelName(level)}

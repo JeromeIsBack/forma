@@ -210,3 +210,11 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
   border-bottom: 1px solid var(--line);
 }
+
+/* ---- Themes (accent + hero gradient) ---- */
+:root { --hero-1: #3A1D6E; --hero-2: #15121d; }
+[data-theme="inferno"] { --violet: #FF4D2E; --violet-soft: #FFE5DF; --hero-1: #5E1A12; --hero-2: #1A1110; }
+[data-theme="emerald"] { --violet: #10B981; --violet-soft: #DCF5EC; --hero-1: #0B5E45; --hero-2: #0F1714; }
+[data-theme="cyber"]   { --violet: #2BB8FF; --violet-soft: #DDF1FF; --hero-1: #0E3F66; --hero-2: #0D1520; }
+[data-theme="gold"]    { --violet: #E5A93B; --violet-soft: #FBEFD7; --hero-1: #6B4E18; --hero-2: #191510; }
+[data-theme="mono"]    { --violet: #5B6472; --violet-soft: #ECEEF1; --hero-1: #333A4A; --hero-2: #15161B; }

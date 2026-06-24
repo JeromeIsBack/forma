@@ -87,7 +87,7 @@ export default function ProfilePage({ state, update, go, onMenu }) {
       </Field>
 
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginTop: 2, color: "#fff",
-        background: "linear-gradient(140deg,#5b35c9,#15121d)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div className="num" style={{ fontSize: 32 }}>{target}g</div>
           <div style={{ fontSize: 12, color: "#cabff0", marginTop: 3 }}>daily protein target</div>

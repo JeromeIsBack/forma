@@ -83,6 +83,9 @@ export function freshState() {
     xp: 0,
     achvBaseline: {},
     achvUnlocked: [],
+    theme: "aurora",
+    measurements: [],
+    settings: { notifications: false, dismissed: {}, lastNotified: null },
   };
 }
 
@@ -96,6 +99,9 @@ function mergeDefaults(saved) {
     ? saved.sources.map((s) => ({ type: "Other", ...s })) : base.sources;
   merged.achvBaseline = saved.achvBaseline || {};
   merged.achvUnlocked = saved.achvUnlocked || [];
+  merged.theme = saved.theme || "aurora";
+  merged.measurements = Array.isArray(saved.measurements) ? saved.measurements : [];
+  merged.settings = { notifications: false, dismissed: {}, lastNotified: null, ...(saved.settings || {}) };
   if (!Array.isArray(merged.weightLog) || !merged.weightLog.length) {
     merged.weightLog = [{ date: today(), kg: merged.profile.weight || 80 }];
   }
@@ -315,6 +321,37 @@ export function achievementBaselineNow(state) {
   const b = {};
   ACHIEVEMENTS.forEach((a) => { b[a.id] = a.measure(state); });
   return b;
+}
+
+export const THEMES = [
+  { id: "aurora", name: "Aurora", primary: "#7C3AED" },
+  { id: "inferno", name: "Inferno", primary: "#FF4D2E" },
+  { id: "emerald", name: "Emerald", primary: "#10B981" },
+  { id: "cyber", name: "Cyber", primary: "#2BB8FF" },
+  { id: "gold", name: "Gold", primary: "#E5A93B" },
+  { id: "mono", name: "Mono", primary: "#5B6472" },
+];
+
+export const MEASUREMENT_METRICS = [
+  { id: "waist", label: "Waist", unit: "cm" },
+  { id: "chest", label: "Chest", unit: "cm" },
+  { id: "arms", label: "Arms", unit: "cm" },
+  { id: "thighs", label: "Thighs", unit: "cm" },
+  { id: "hips", label: "Hips", unit: "cm" },
+  { id: "bodyfat", label: "Body fat", unit: "%" },
+];
+
+export function daysBetween(a, b) {
+  return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+}
+export function lastMeasurement(state) {
+  const m = state.measurements || [];
+  return m.length ? m[m.length - 1] : null;
+}
+export function measurementDue(state) {
+  const last = lastMeasurement(state);
+  if (!last) return (state.measurements || []).length === 0 ? false : true;
+  return daysBetween(last.date, today()) >= 30;
 }
 
 export function recomputeXp(state) {

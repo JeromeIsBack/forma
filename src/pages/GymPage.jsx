@@ -39,7 +39,7 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
       <h2 className="sr-only">Gym tracker — log today's session and see your weekly progress</h2>
       <PageHead go={go} onMenu={onMenu} title="Gym" sub={`${target} sessions a week, every week`} />
 
-      <div className="card" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18, background: "linear-gradient(145deg,#3A1D6E,#15121d)", border: "none", color: "#fff" }}>
+      <div className="card" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18, background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))", border: "none", color: "#fff" }}>
         <Ring value={sessions} max={target} size={72} stroke={8} track="#2e2740" color="#C6F432">
           <div className="num" style={{ fontSize: 22, color: "#fff" }}>{sessions}<span style={{ fontSize: 13, color: "#8a7fb0" }}>/{target}</span></div>
         </Ring>

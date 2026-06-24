@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useStore, levelFromXp, totalTierScore } from "./lib/store.js";
+import { useStore, levelFromXp, totalTierScore, measurementDue, today } from "./lib/store.js";
 import { burst, Icon } from "./components/ui.jsx";
 import { NavDrawer } from "./components/NavDrawer.jsx";
 import { BottomNav } from "./components/BottomNav.jsx";
@@ -12,6 +12,8 @@ import ProgressPage from "./pages/ProgressPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import AchievementsPage from "./pages/AchievementsPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
+import MeasurementsPage from "./pages/MeasurementsPage.jsx";
+import { registerSW, showNotification } from "./lib/notify.js";
 
 export default function App() {
   const [state, update, replace] = useStore();
@@ -21,6 +23,7 @@ export default function App() {
   const prevLevel = useRef(null);
   const prevTierScore = useRef(null);
   const toastTimer = useRef();
+  const reminded = useRef(false);
 
   function showToast(kind, text) {
     clearTimeout(toastTimer.current);
@@ -43,6 +46,22 @@ export default function App() {
     prevTierScore.current = score;
   }, [state]);
 
+  useEffect(() => { registerSW(); }, []);
+
+  useEffect(() => {
+    if (state && state.theme) document.documentElement.setAttribute("data-theme", state.theme);
+  }, [state && state.theme]);
+
+  useEffect(() => {
+    if (!state || reminded.current) return;
+    reminded.current = true;
+    if (state.settings && state.settings.notifications && measurementDue(state) && state.settings.lastNotified !== today()) {
+      showNotification("Forma — monthly check-in", "Time for your body measurements.", "measure").then((ok) => {
+        if (ok) update((s) => { s.settings.lastNotified = today(); return s; });
+      });
+    }
+  }, [state]);
+
   if (!state) {
     return (
       <div className="app" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
@@ -63,6 +82,7 @@ export default function App() {
     history: <HistoryPage state={state} go={go} onMenu={onMenu} />,
     achievements: <AchievementsPage state={state} go={go} onMenu={onMenu} />,
     settings: <SettingsPage state={state} update={update} replace={replace} go={go} onMenu={onMenu} celebrate={showToast} />,
+    measurements: <MeasurementsPage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
   };
 
   const isHub = view === "dashboard";

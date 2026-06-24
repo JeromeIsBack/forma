@@ -14,7 +14,7 @@ export default function AchievementsPage({ state, go, onMenu }) {
       <PageHead go={go} onMenu={onMenu} title="Achievements" sub="Earn your legend, one rank at a time" />
 
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff",
-        background: "linear-gradient(145deg,#3A1D6E,#15121d)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+        background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -30, right: -20, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(198,244,50,0.18), transparent 70%)" }} />
         <div>
           <div className="num" style={{ fontSize: 30 }}>{unlocked}<span style={{ fontSize: 16, color: "#8a7fb0" }}>/{ACHIEVEMENTS.length}</span></div>
