@@ -1,6 +1,7 @@
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
-import { proteinTarget, today } from "../lib/store.js";
+import { proteinTarget, today, getSplits, weeklyTarget, SPLIT_PALETTE } from "../lib/store.js";
+import { goalGuide } from "../data/goals.js";
 
 const GOALS = [
   { id: "recomp", label: "Recomp" },
@@ -14,9 +15,14 @@ const ACTIVITY = [
   { id: "active", label: "Active" },
 ];
 
-export default function ProfilePage({ state, update, go }) {
+export default function ProfilePage({ state, update, go, onMenu }) {
   const p = state.profile;
   const target = proteinTarget(p);
+  const splits = getSplits(state);
+  const wt = weeklyTarget(state);
+  const guide = goalGuide(p.goal);
+  const recMult = guide.proteinMult;
+  const recDiff = Math.abs(recMult - p.multiplier) >= 0.05;
 
   function setField(key, value) {
     update((s) => { s.profile[key] = value; return s; });
@@ -33,11 +39,40 @@ export default function ProfilePage({ state, update, go }) {
       return s;
     });
   }
+  function applyRecommended() {
+    update((s) => { s.profile.multiplier = recMult; return s; });
+  }
+
+  // ---- Routine editing ----
+  function setSplitLabel(id, label) {
+    update((s) => {
+      const sp = s.routine.splits.find((x) => x.id === id);
+      if (sp) sp.label = label;
+      return s;
+    });
+  }
+  function removeSplit(id) {
+    update((s) => {
+      if (s.routine.splits.length <= 1) return s;
+      s.routine.splits = s.routine.splits.filter((x) => x.id !== id);
+      return s;
+    });
+  }
+  function addSplit() {
+    update((s) => {
+      const color = SPLIT_PALETTE[s.routine.splits.length % SPLIT_PALETTE.length];
+      s.routine.splits.push({ id: "s" + Date.now(), label: "New split", color });
+      return s;
+    });
+  }
+  function setTarget(n) {
+    update((s) => { s.routine.weeklyTarget = Math.min(7, Math.max(1, n)); return s; });
+  }
 
   return (
     <div className="app">
-      <h2 className="sr-only">Your profile — stats that drive your targets across the app</h2>
-      <PageHead go={go} title="Your profile" sub="Drives your targets everywhere" />
+      <h2 className="sr-only">Your profile — stats and training routine that drive your targets</h2>
+      <PageHead go={go} onMenu={onMenu} title="Your profile" sub="Drives your targets everywhere" />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
         <Field label="Body weight (kg)">
@@ -64,6 +99,7 @@ export default function ProfilePage({ state, update, go }) {
             <button key={g.id} className={`seg-opt ${p.goal === g.id ? "on" : ""}`} onClick={() => setField("goal", g.id)}>{g.label}</button>
           ))}
         </div>
+        <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 9, lineHeight: 1.5 }}>{guide.plan}</div>
       </Field>
 
       <Field label="Activity level" full>
@@ -75,11 +111,22 @@ export default function ProfilePage({ state, update, go }) {
       </Field>
 
       <Field label={`Protein multiplier — ${p.multiplier.toFixed(1)} g/kg`} full>
-        <input type="range" min="1.6" max="2.2" step="0.1" value={p.multiplier}
+        <input type="range" min="1.4" max="3.1" step="0.1" value={p.multiplier}
           onChange={(e) => setField("multiplier", parseFloat(e.target.value))} />
+        {recDiff && (
+          <button onClick={applyRecommended}
+            style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 11, padding: "10px 13px", width: "100%",
+              borderRadius: "var(--r-md)", border: `1px solid ${guide.color}55`, background: guide.color + "12", textAlign: "left" }}>
+            <Icon name="bulb" size={16} style={{ color: guide.color }} />
+            <span style={{ fontSize: 12.5, color: "var(--text)", flex: 1 }}>
+              For <b>{guide.label}</b>, aim for <b>{recMult.toFixed(1)} g/kg</b>
+            </span>
+            <span style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 12, color: guide.color }}>Apply</span>
+          </button>
+        )}
       </Field>
 
-      <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginTop: 18, color: "#fff",
+      <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginTop: 4, color: "#fff",
         background: "linear-gradient(140deg,#5b35c9,#15121d)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div className="num" style={{ fontSize: 32 }}>{target}g</div>
@@ -90,8 +137,37 @@ export default function ProfilePage({ state, update, go }) {
         </div>
       </div>
 
+      <div className="section-label">Training routine</div>
+      <div className="card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <span style={{ fontSize: 13, color: "var(--text-2)" }}>Sessions per week</span>
+          <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--line-2)", borderRadius: 99, overflow: "hidden" }}>
+            <button onClick={() => setTarget(wt - 1)} aria-label="Fewer" style={{ width: 34, height: 34, color: "var(--text-2)", fontSize: 18 }}>−</button>
+            <span className="num" style={{ width: 30, textAlign: "center", fontSize: 15 }}>{wt}</span>
+            <button onClick={() => setTarget(wt + 1)} aria-label="More" style={{ width: 34, height: 34, color: "var(--violet)", fontSize: 18 }}>+</button>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+          {splits.map((sp) => (
+            <div key={sp.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 4, background: sp.color, flexShrink: 0 }} />
+              <input className="input" value={sp.label} onChange={(e) => setSplitLabel(sp.id, e.target.value)} style={{ height: 42, fontSize: 14 }} />
+              <button onClick={() => removeSplit(sp.id)} aria-label="Remove split" disabled={splits.length <= 1}
+                style={{ width: 38, height: 38, flexShrink: 0, borderRadius: "var(--r-md)", border: "1px solid var(--line)", color: splits.length <= 1 ? "var(--text-3)" : "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center", opacity: splits.length <= 1 ? 0.4 : 1 }}>
+                <Icon name="trash" size={17} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={addSplit} style={{ width: "100%", marginTop: 12, padding: 12, border: "1px dashed var(--line-2)", borderRadius: "var(--r-md)", color: "var(--text-2)", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          <Icon name="plus" size={15} /> Add a split
+        </button>
+      </div>
+
       <div style={{ fontSize: 11.5, color: "var(--text-3)", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
-        These values flow into your Protein page, the dashboard rings, and your weight trend on Progress.
+        Your weekly target drives the gym ring, your streak, and your achievements.
       </div>
     </div>
   );

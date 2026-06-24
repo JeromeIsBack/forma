@@ -2,9 +2,10 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Icon, CountUp } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
+import { GoalCoach } from "../components/GoalCoach.jsx";
 import { today, dayProtein, proteinTarget } from "../lib/store.js";
 
-export default function ProteinPage({ state, update, go, celebrate }) {
+export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [adding, setAdding] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [draftAvg, setDraftAvg] = useState("");
@@ -55,7 +56,7 @@ export default function ProteinPage({ state, update, go, celebrate }) {
   return (
     <div className="app">
       <h2 className="sr-only">Protein tracker — log your main sources to reach today's target</h2>
-      <PageHead go={go} title="Protein" sub={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} />
+      <PageHead go={go} onMenu={onMenu} title="Protein" sub={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} />
 
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff", background: "linear-gradient(140deg,#5b35c9,#3A1D6E)" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
@@ -69,6 +70,10 @@ export default function ProteinPage({ state, update, go, celebrate }) {
         <div style={{ fontSize: 11.5, color: "#cabff0", marginTop: 9 }}>
           {total >= target ? "Target reached — strong day." : `${target - total}g to go`}
         </div>
+      </div>
+
+      <div style={{ marginBottom: 4 }}>
+        <GoalCoach goal={state.profile.goal} context="protein" />
       </div>
 
       <div className="section-label">Your sources</div>

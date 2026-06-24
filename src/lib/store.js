@@ -2,11 +2,15 @@ import { useState, useEffect, useCallback } from "react";
 
 const KEY = "forma.v1";
 
-export const SPLITS = [
+export const DEFAULT_SPLITS = [
   { id: "push", label: "Push / core", color: "#7C3AED" },
   { id: "pull", label: "Pull / back", color: "#5DE0C4" },
   { id: "legs", label: "Legs / agility", color: "#FF6B2C" },
 ];
+// Back-compat alias
+export const SPLITS = DEFAULT_SPLITS;
+
+export const SPLIT_PALETTE = ["#7C3AED", "#5DE0C4", "#FF6B2C", "#FF4D6D", "#FFC53D", "#3FA9F5"];
 
 export const DEFAULT_SOURCES = [
   { id: "esn", name: "ESN Isoclear shake", avg: 25, unit: "scoop" },
@@ -29,14 +33,16 @@ const DEFAULT_PROFILE = {
   multiplier: 1.9,
 };
 
+const DEFAULT_ROUTINE = { weeklyTarget: 3, splits: DEFAULT_SPLITS };
+
 const DEFAULT_STATE = {
   profile: DEFAULT_PROFILE,
+  routine: DEFAULT_ROUTINE,
   sources: DEFAULT_SOURCES,
   protein: {},
   gym: {},
   weightLog: [{ date: isoDays(-56), kg: 95.2 }, { date: today(), kg: 94 }],
   xp: 0,
-  badges: [],
   lastCelebrated: {},
 };
 
@@ -59,12 +65,32 @@ function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULT_STATE;
-    return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    const merged = { ...DEFAULT_STATE, ...parsed };
+    // Backfill routine for users created before routines existed
+    if (!merged.routine || !Array.isArray(merged.routine.splits) || merged.routine.splits.length === 0) {
+      merged.routine = DEFAULT_ROUTINE;
+    }
+    if (typeof merged.routine.weeklyTarget !== "number") merged.routine.weeklyTarget = 3;
+    return merged;
   } catch {
     return DEFAULT_STATE;
   }
 }
 
+// ---- Routine helpers ----
+export function getSplits(state) {
+  return state.routine && state.routine.splits && state.routine.splits.length
+    ? state.routine.splits
+    : DEFAULT_SPLITS;
+}
+export function weeklyTarget(state) {
+  return state.routine && typeof state.routine.weeklyTarget === "number"
+    ? state.routine.weeklyTarget
+    : 3;
+}
+
+// ---- XP / levels ----
 export const XP_PER_GYM = 50;
 export const XP_PER_PROTEIN_HIT = 45;
 
@@ -107,6 +133,7 @@ export function gymThisWeek(state, date = today()) {
 }
 
 export function gymStreak(state) {
+  const target = weeklyTarget(state);
   const weeks = {};
   Object.keys(state.gym).forEach((d) => {
     const w = weekKey(d);
@@ -114,7 +141,13 @@ export function gymStreak(state) {
   });
   let streak = 0;
   let cursor = weekKey(today());
-  while (weeks[cursor] >= 3) {
+  // Current week only counts once the target is met; otherwise start from last week.
+  if (!(weeks[cursor] >= target)) {
+    const d = new Date(cursor + "T00:00:00");
+    d.setDate(d.getDate() - 7);
+    cursor = d.toISOString().slice(0, 10);
+  }
+  while (weeks[cursor] >= target) {
     streak += 1;
     const d = new Date(cursor + "T00:00:00");
     d.setDate(d.getDate() - 7);
@@ -123,14 +156,54 @@ export function gymStreak(state) {
   return streak;
 }
 
-export const BADGES = [
-  { id: "first-week", name: "First week", icon: "calendar-check", test: (s) => Object.keys(s.gym).length >= 3 },
-  { id: "sessions-15", name: "15 sessions", icon: "barbell", test: (s) => Object.keys(s.gym).length >= 15 },
-  { id: "protein-pb", name: "Protein PB", icon: "bolt", test: (s) => Object.keys(s.protein).some((d) => dayProtein(s, d) >= proteinTarget(s.profile)) },
-  { id: "streak-10", name: "10 wk streak", icon: "flame", test: (s) => gymStreak(s) >= 10 },
-  { id: "lvl-5", name: "Level 5", icon: "star", test: (s) => levelFromXp(s.xp).level >= 5 },
-  { id: "consistent", name: "Consistency", icon: "checks", test: (s) => Object.keys(s.protein).filter((d) => dayProtein(s, d) >= proteinTarget(s.profile)).length >= 7 },
+// ---- Aggregate measures ----
+export function totalGym(state) {
+  return Object.keys(state.gym).length;
+}
+export function proteinHitDays(state) {
+  const t = proteinTarget(state.profile);
+  return Object.keys(state.protein).filter((d) => dayProtein(state, d) >= t).length;
+}
+export function loggedDays(state) {
+  return new Set([...Object.keys(state.gym), ...Object.keys(state.protein)]).size;
+}
+
+// ---- Tiered achievements ----
+export const TIERS = [
+  { name: "Bronze", color: "#C77B3A" },
+  { name: "Silver", color: "#9AA6B2" },
+  { name: "Gold", color: "#E5A93B" },
+  { name: "Platinum", color: "#5DE0C4" },
+  { name: "Diamond", color: "#7C3AED" },
 ];
+
+export const ACHIEVEMENTS = [
+  { id: "iron", name: "Iron", icon: "barbell", unit: "sessions", thresholds: [10, 25, 50, 100, 200], measure: (s) => totalGym(s) },
+  { id: "inferno", name: "Inferno", icon: "flame", unit: "week streak", thresholds: [2, 4, 8, 12, 24], measure: (s) => gymStreak(s) },
+  { id: "fuelled", name: "Fuelled", icon: "bolt", unit: "target days", thresholds: [1, 7, 30, 75, 150], measure: (s) => proteinHitDays(s) },
+  { id: "ascendant", name: "Ascendant", icon: "star", unit: "level", thresholds: [3, 5, 10, 15, 20], measure: (s) => levelFromXp(s.xp).level },
+  { id: "relentless", name: "Relentless", icon: "calendar-check", unit: "days logged", thresholds: [7, 30, 90, 180, 365], measure: (s) => loggedDays(s) },
+];
+
+// Returns the tier state for one achievement: index 0 = locked, 1..5 = Bronze..Diamond
+export function tierFor(ach, state) {
+  const measure = ach.measure(state);
+  let idx = 0;
+  for (let i = 0; i < ach.thresholds.length; i++) {
+    if (measure >= ach.thresholds[i]) idx = i + 1;
+  }
+  const atMax = idx >= ach.thresholds.length;
+  const prev = idx > 0 ? ach.thresholds[idx - 1] : 0;
+  const next = atMax ? null : ach.thresholds[idx];
+  const tier = idx > 0 ? TIERS[idx - 1] : null;
+  const nextTier = atMax ? null : TIERS[idx];
+  const progress = atMax ? 1 : Math.min((measure - prev) / (next - prev), 1);
+  return { measure, idx, atMax, prev, next, tier, nextTier, progress };
+}
+
+export function totalTierScore(state) {
+  return ACHIEVEMENTS.reduce((sum, a) => sum + tierFor(a, state).idx, 0);
+}
 
 export function recomputeXp(state) {
   const gymXp = Object.keys(state.gym).length * XP_PER_GYM;
@@ -138,10 +211,6 @@ export function recomputeXp(state) {
     (d) => dayProtein(state, d) >= proteinTarget(state.profile)
   ).length * XP_PER_PROTEIN_HIT;
   return gymXp + proteinXp;
-}
-
-export function earnedBadges(state) {
-  return BADGES.filter((b) => b.test(state)).map((b) => b.id);
 }
 
 export function useStore() {
@@ -157,7 +226,6 @@ export function useStore() {
     setState((prev) => {
       const next = fn(structuredClone(prev));
       next.xp = recomputeXp(next);
-      next.badges = earnedBadges(next);
       return next;
     });
   }, []);

@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { CountUp, Ring, Icon } from "../components/ui.jsx";
+import { MenuButton } from "../components/NavDrawer.jsx";
 import {
   today, weekKey, dayProtein, gymThisWeek, gymStreak,
-  proteinTarget, levelFromXp, levelName, BADGES,
+  proteinTarget, levelFromXp, levelName, weeklyTarget,
+  ACHIEVEMENTS, tierFor,
 } from "../lib/store.js";
 
 const fade = (i = 0) => ({
@@ -28,15 +30,15 @@ function weekDays(state) {
   return out;
 }
 
-export default function Dashboard({ state, go }) {
+export default function Dashboard({ state, go, onMenu }) {
   const target = proteinTarget(state.profile);
   const protein = Math.round(dayProtein(state, today()));
+  const wt = weeklyTarget(state);
   const sessions = gymThisWeek(state);
   const streak = gymStreak(state);
   const { level, into, need } = levelFromXp(state.xp);
   const xpPct = Math.round((into / need) * 100);
   const days = weekDays(state);
-  const earned = new Set(state.badges);
   const dateLabel = new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
   const proteinHit = protein >= target;
 
@@ -46,7 +48,10 @@ export default function Dashboard({ state, go }) {
 
       <motion.div className="topbar" {...fade(0)}>
         <div className="logo">FORMA<span className="dot">.</span></div>
-        <div className="daypill">{dateLabel}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div className="daypill">{dateLabel}</div>
+          <MenuButton onClick={onMenu} />
+        </div>
       </motion.div>
 
       <motion.div {...fade(1)}
@@ -78,7 +83,7 @@ export default function Dashboard({ state, go }) {
 
       <motion.div {...fade(2)} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: 14 }}>
         <Tile onClick={() => go("gym")} bg="var(--violet)" icon="barbell" label="Gym"
-          big={`${sessions}/3`} hint="this week" />
+          big={`${sessions}/${wt}`} hint="this week" />
         <Tile onClick={() => go("progress")} bg="var(--coral)" icon="flame" label="Streak"
           big={String(streak)} hint={streak === 1 ? "week alive" : "weeks alive"} />
       </motion.div>
@@ -112,26 +117,37 @@ export default function Dashboard({ state, go }) {
         </div>
       </motion.div>
 
-      <motion.div {...fade(5)}>
-        <div className="eyebrow" style={{ margin: "0 2px 12px" }}>Achievements</div>
+      <motion.button {...fade(5)} onClick={() => go("progress")} style={{ width: "100%", textAlign: "left" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 2px 12px" }}>
+          <div className="eyebrow">Achievements</div>
+          <span style={{ fontSize: 11, color: "var(--violet)", fontWeight: 600 }}>View all <Icon name="chevron-right" size={11} style={{ verticalAlign: -1 }} /></span>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          {BADGES.slice(0, 6).map((b) => {
-            const on = earned.has(b.id);
+          {ACHIEVEMENTS.map((ach) => {
+            const t = tierFor(ach, state);
+            const locked = t.idx === 0;
+            const color = locked ? "var(--text-3)" : t.tier.color;
             return (
-              <div key={b.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 50, height: 50, borderRadius: 15,
-                  background: on ? "var(--violet-soft)" : "var(--cloud)",
-                  border: on ? "none" : "1px solid var(--line)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: on ? "var(--violet)" : "var(--text-3)" }}>
-                  <Icon name={on ? b.icon : "lock"} size={21} />
+              <div key={ach.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 50, height: 50, borderRadius: 15, position: "relative",
+                  background: locked ? "var(--cloud)" : color + "22",
+                  border: locked ? "1px solid var(--line)" : "none",
+                  display: "flex", alignItems: "center", justifyContent: "center", color }}>
+                  <Icon name={locked ? "lock" : ach.icon} size={21} />
+                  {!locked && (
+                    <span style={{ position: "absolute", bottom: -4, right: -4, background: color, color: "#fff",
+                      fontFamily: "var(--display)", fontWeight: 600, fontSize: 9, width: 18, height: 18, borderRadius: 99,
+                      display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--cloud)" }}>
+                      {t.idx}
+                    </span>
+                  )}
                 </div>
-                <span style={{ fontSize: 10, color: "var(--text-2)", textAlign: "center", lineHeight: 1.2 }}>{b.name}</span>
+                <span style={{ fontSize: 10, color: "var(--text-2)", textAlign: "center", lineHeight: 1.2 }}>{ach.name}</span>
               </div>
             );
           })}
         </div>
-      </motion.div>
+      </motion.button>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
-import { SPLITS, dayProtein, proteinTarget } from "../lib/store.js";
+import { getSplits, dayProtein, proteinTarget } from "../lib/store.js";
 
-export default function HistoryPage({ state, go }) {
+export default function HistoryPage({ state, go, onMenu }) {
+  const splits = getSplits(state);
   const [filter, setFilter] = useState("all");
   const target = proteinTarget(state.profile);
 
@@ -33,7 +34,7 @@ export default function HistoryPage({ state, go }) {
   return (
     <div className="app">
       <h2 className="sr-only">History — your full log of sessions and protein days</h2>
-      <PageHead go={go} title="History" sub="Every session, every day" />
+      <PageHead go={go} onMenu={onMenu} title="History" sub="Every session, every day" />
 
       <div className="seg" style={{ marginBottom: 16 }}>
         {[["all", "All"], ["gym", "Gym"], ["protein", "Protein"]].map(([id, label]) => (
@@ -49,7 +50,7 @@ export default function HistoryPage({ state, go }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
         {filtered.map((d) => {
-          const sp = SPLITS.find((x) => x.id === state.gym[d]);
+          const sp = splits.find((x) => x.id === state.gym[d]);
           const grams = Math.round(dayProtein(state, d));
           const hit = grams >= target;
           return (

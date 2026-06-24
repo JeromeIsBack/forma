@@ -2,6 +2,7 @@ import { Icon, Ring } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import {
   today, weekKey, dayProtein, proteinTarget, gymStreak, levelFromXp, levelName,
+  weeklyTarget, ACHIEVEMENTS, tierFor,
 } from "../lib/store.js";
 
 function lastWeeks(n) {
@@ -16,14 +17,15 @@ function lastWeeks(n) {
   return out;
 }
 
-export default function ProgressPage({ state, go }) {
+export default function ProgressPage({ state, go, onMenu }) {
   const target = proteinTarget(state.profile);
   const streak = gymStreak(state);
+  const wt = weeklyTarget(state);
   const { level } = levelFromXp(state.xp);
 
   const weeks = lastWeeks(4);
-  const heat = weeks.map((wk) => {
-    return Array.from({ length: 7 }).map((_, i) => {
+  const heat = weeks.map((wk) =>
+    Array.from({ length: 7 }).map((_, i) => {
       const d = new Date(wk + "T00:00:00");
       d.setDate(d.getDate() + i);
       const iso = d.toISOString().slice(0, 10);
@@ -33,8 +35,8 @@ export default function ProgressPage({ state, go }) {
       if (ratio >= 1) return 3;
       if (ratio >= 0.66) return 2;
       return 1;
-    });
-  });
+    })
+  );
   const heatColors = ["var(--cloud)", "#cecbf6", "#7f77dd", "#534ab7"];
 
   const sessions = Object.keys(state.gym).length;
@@ -50,13 +52,13 @@ export default function ProgressPage({ state, go }) {
 
   const allWeeks = lastWeeks(5);
   const hitWeeks = allWeeks.filter((wk) =>
-    Object.keys(state.gym).filter((d) => weekKey(d) === wk).length >= 3).length;
+    Object.keys(state.gym).filter((d) => weekKey(d) === wk).length >= wt).length;
   const consistency = Math.round((hitWeeks / allWeeks.length) * 100);
 
   return (
     <div className="app">
-      <h2 className="sr-only">Progress — your streak, protein consistency, and weight trend</h2>
-      <PageHead go={go} title="Progress" sub="Your momentum, visualised" />
+      <h2 className="sr-only">Progress — your streak, achievements, protein consistency, and weight trend</h2>
+      <PageHead go={go} onMenu={onMenu} title="Progress" sub="Your momentum, visualised" />
 
       <div className="card" style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 14 }}>
         <Ring value={consistency} max={100} size={92} stroke={9} track="var(--coral-soft)" color="var(--coral)">
@@ -72,6 +74,37 @@ export default function ProgressPage({ state, go }) {
             <Icon name="star" size={12} style={{ verticalAlign: -1 }} /> Level {level} · {levelName(level)}
           </div>
         </div>
+      </div>
+
+      <div className="section-label">Achievements</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        {ACHIEVEMENTS.map((ach) => {
+          const t = tierFor(ach, state);
+          const locked = t.idx === 0;
+          const color = locked ? "var(--text-3)" : t.tier.color;
+          const tierName = locked ? "Locked" : t.tier.name;
+          const goalText = t.atMax ? "Maxed out" : `${t.measure}/${t.next} ${ach.unit}`;
+          return (
+            <div key={ach.id} className="card" style={{ display: "flex", alignItems: "center", gap: 13, padding: "12px 14px" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+                background: locked ? "var(--cloud)" : color + "22",
+                border: locked ? "1px solid var(--line)" : "none",
+                display: "flex", alignItems: "center", justifyContent: "center", color }}>
+                <Icon name={locked ? "lock" : ach.icon} size={21} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14 }}>{ach.name}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color, background: locked ? "var(--cloud)" : color + "1f", padding: "2px 8px", borderRadius: 99 }}>{tierName}</span>
+                </div>
+                <div style={{ height: 6, background: "var(--cloud)", borderRadius: 99, marginTop: 8, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${t.progress * 100}%`, background: locked ? "var(--text-3)" : color, borderRadius: 99, transition: "width 0.6s ease" }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-2)", textAlign: "right", minWidth: 58, flexShrink: 0 }}>{goalText}</div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="section-label">Protein — hit / miss</div>
