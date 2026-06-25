@@ -15,3 +15,14 @@ export function BoltLogo({ size = 40 }) {
     </svg>
   );
 }
+
+export function FormaWordmark({ fontSize, style }) {
+  return (
+    <span className="logo" style={{ ...(fontSize ? { fontSize } : {}), display: "inline-flex", alignItems: "baseline", ...style }}>
+      FORMA
+      <svg viewBox="0 0 20 28" aria-hidden="true" style={{ height: "0.66em", width: "0.42em", marginLeft: "0.07em", alignSelf: "center" }}>
+        <polygon points="13,1 2,16 9,16 5,27 18,10 10,10 15,1" fill="#C6F432" />
+      </svg>
+    </span>
+  );
+}

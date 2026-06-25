@@ -25,6 +25,7 @@ export default function ProgressPage({ state, go, onMenu }) {
   const unit = state.settings.unit || "kg";
 
   const weeks = lastWeeks(4);
+  const [dayDetail, setDayDetail] = useState(null);
   const heat = weeks.map((wk) =>
     Array.from({ length: 7 }).map((_, i) => {
       const iso = addDays(wk, i);
@@ -97,19 +98,73 @@ export default function ProgressPage({ state, go, onMenu }) {
           {heat.map((week, wi) => (
             <div key={wi} style={{ display: "flex", gap: 5, alignItems: "center" }}>
               <span style={{ fontSize: 10, color: "var(--text-3)", width: 26 }}>W{wi + 1}</span>
-              {week.map((lvl, di) => (
-                <div key={di} style={{ flex: 1, height: 19, borderRadius: 4, background: heatColors[lvl],
-                  border: lvl === 0 ? "1px solid var(--line)" : "none" }} />
-              ))}
+              {week.map((lvl, di) => {
+                const cellDate = addDays(weeks[wi], di);
+                const future = cellDate > today();
+                const active = dayDetail === cellDate;
+                return (
+                  <button key={di} onClick={() => !future && setDayDetail(active ? null : cellDate)} disabled={future}
+                    aria-label={cellDate}
+                    style={{ flex: 1, height: 19, borderRadius: 4, padding: 0,
+                      background: future ? "transparent" : heatColors[lvl],
+                      border: active ? "2px solid var(--violet)" : lvl === 0 ? "1px solid var(--line)" : "none",
+                      opacity: future ? 0.3 : 1 }} />
+                );
+              })}
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end", marginTop: 9, fontSize: 10, color: "var(--text-3)" }}>
-          under
-          {[1, 2, 3].map((l) => <div key={l} style={{ width: 14, height: 10, borderRadius: 2, background: heatColors[l] }} />)}
-          target
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9, fontSize: 10, color: "var(--text-3)" }}>
+          <span>Tap a day for details</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            under
+            {[1, 2, 3].map((l) => <div key={l} style={{ width: 14, height: 10, borderRadius: 2, background: heatColors[l] }} />)}
+            target
+          </div>
         </div>
       </div>
+
+
+      {dayDetail && (() => {
+        const grams = Math.round(dayProtein(state, dayDetail));
+        const entry = state.protein[dayDetail] || {};
+        const rows = [];
+        Object.entries(entry).forEach(([id, val]) => {
+          if (id === "_custom") { if (val > 0) rows.push({ label: "One-off entry", sub: "manual", grams: Math.round(val) }); return; }
+          const src = state.sources.find((x) => x.id === id);
+          if (src) rows.push({ label: src.name, sub: val + "× " + src.avg + "g", grams: Math.round(src.avg * val) });
+        });
+        rows.sort((a, b) => b.grams - a.grams);
+        const hit = grams >= target;
+        const dl = new Date(dayDetail + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
+        return (
+          <div className="card" style={{ marginTop: 10 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: rows.length ? 13 : 2 }}>
+              <div>
+                <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14 }}>{dl}</div>
+                <div style={{ fontSize: 12.5, color: "var(--text-2)", marginTop: 3 }}>
+                  <span className="num" style={{ color: "var(--text)", fontSize: 14 }}>{grams}g</span> of {target}g
+                  {grams > 0 && (hit ? " · target hit" : " · " + Math.round((grams / target) * 100) + "%")}
+                </div>
+              </div>
+              <button onClick={() => setDayDetail(null)} aria-label="Close" style={{ width: 32, height: 32, marginRight: -6, color: "var(--text-3)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="x" size={17} /></button>
+            </div>
+            {rows.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                {rows.map((r, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ flex: 1, fontSize: 13 }}>{r.label}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-3)" }}>{r.sub}</span>
+                    <span className="num" style={{ fontSize: 13, width: 50, textAlign: "right" }}>{r.grams}g</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: 12.5, color: "var(--text-3)" }}>Nothing logged this day.</div>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="section-label">Body weight trend</div>
       <div className="card">

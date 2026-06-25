@@ -14,7 +14,7 @@ import AchievementsPage from "./pages/AchievementsPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import TrainingPage from "./pages/TrainingPage.jsx";
 import { registerSW, showNotification } from "./lib/notify.js";
-import { BoltLogo } from "./components/BoltLogo.jsx";
+import { BoltLogo, FormaWordmark } from "./components/BoltLogo.jsx";
 
 export default function App() {
   const [state, update, replace] = useStore();
@@ -78,7 +78,7 @@ export default function App() {
       <div className="app" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
           <BoltLogo size={64} />
-          <div className="logo" style={{ fontSize: 26, opacity: 0.85 }}>FORMA<span className="dot">.</span></div>
+          <FormaWordmark fontSize={26} style={{ opacity: 0.85 }} />
         </div>
       </div>
     );

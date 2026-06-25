@@ -61,7 +61,7 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
 
       <GoalCoach goal={state.profile.goal} context="training" note={gymNote} />
 
-      <DateNav value={date} onChange={setDate} />
+      <div style={{ marginTop: 18 }}><DateNav value={date} onChange={setDate} /></div>
 
       <div className="section-label">{todaySplit ? "Logged this day" : "Log a session"}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -70,17 +70,13 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
           const suggested = !todaySplit && sp.id === nextSplit;
           return (
             <motion.button key={sp.id} whileTap={{ scale: 0.97 }} onClick={() => logSplit(sp.id)}
-              style={{ display: "flex", alignItems: "center", gap: 13, padding: "15px 16px", borderRadius: "var(--r-lg)",
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: "var(--r-lg)",
                 background: on ? sp.color : "var(--paper)", color: on ? "#fff" : "var(--text)",
                 border: on ? "none" : "1px solid var(--line)", textAlign: "left", width: "100%" }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                background: on ? "rgba(255,255,255,0.18)" : sp.color + "22",
-                display: "flex", alignItems: "center", justifyContent: "center", color: on ? "#fff" : sp.color }}>
-                <Icon name="barbell" size={20} />
-              </div>
+              <span style={{ width: 11, height: 11, borderRadius: 4, flexShrink: 0, background: on ? "rgba(255,255,255,0.92)" : sp.color }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14 }}>{sp.label}</div>
-                {suggested && <div style={{ fontSize: 11, color: "var(--violet)", marginTop: 2 }}>Next in your rotation</div>}
+                {suggested && <div style={{ fontSize: 11, color: on ? "rgba(255,255,255,0.85)" : "var(--violet)", marginTop: 2 }}>Next up</div>}
               </div>
               {on ? <Icon name="circle-check" size={22} /> : <Icon name="plus" size={20} style={{ color: "var(--text-3)" }} />}
             </motion.button>

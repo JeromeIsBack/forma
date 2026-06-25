@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
-import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, exercisesForSplit, exerciseHasData } from "../lib/store.js";
+import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, EXERCISE_LIBRARY, exercisesForSplit, exerciseHasData } from "../lib/store.js";
 
 export default function TrainingPage({ state, update, go, onMenu }) {
   const splits = getSplits(state);
   const wt = weeklyTarget(state);
   const [exDraft, setExDraft] = useState({});
   const [removingId, setRemovingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const archived = (state.exercises || []).filter((e) => e.archived);
 
   function setSplitLabel(id, label) { update((s) => { const sp = s.routine.splits.find((x) => x.id === id); if (sp) sp.label = label; return s; }); }
@@ -22,6 +23,10 @@ export default function TrainingPage({ state, update, go, onMenu }) {
     if (!f.name.trim()) return;
     update((s) => { if (!s.exercises) s.exercises = []; s.exercises.push({ id: "ex" + Date.now(), name: f.name.trim(), type: f.type, splitId }); return s; });
     setExDraft((d) => ({ ...d, [splitId]: { name: "", type: f.type } }));
+  }
+  function addLibraryExercise(splitId, item) {
+    update((s) => { if (!s.exercises) s.exercises = []; s.exercises.push({ id: "ex" + Date.now(), name: item.name, type: item.type, splitId }); return s; });
+    setExDraft((d) => ({ ...d, [splitId]: { name: "", type: item.type } }));
   }
   function renameExercise(id, name) { update((s) => { const e = s.exercises.find((x) => x.id === id); if (e) e.name = name; return s; }); }
   function setExerciseType(id, type) { update((s) => { const e = s.exercises.find((x) => x.id === id); if (e && !exerciseHasData(s, id)) e.type = type; return s; }); }
@@ -57,6 +62,9 @@ export default function TrainingPage({ state, update, go, onMenu }) {
         {splits.map((sp) => {
           const exs = exercisesForSplit(state, sp.id);
           const f = exFields(sp.id);
+          const q = f.name.trim().toLowerCase();
+          const have = new Set(exs.map((e) => e.name.toLowerCase()));
+          const matches = q ? EXERCISE_LIBRARY.filter((it) => it.name.toLowerCase().includes(q) && !have.has(it.name.toLowerCase())).slice(0, 6) : [];
           return (
             <div key={sp.id} className="card">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -73,25 +81,37 @@ export default function TrainingPage({ state, update, go, onMenu }) {
                   {exs.map((ex) => {
                     const locked = exerciseHasData(state, ex.id);
                     const removing = removingId === ex.id;
+                    const editing = editingId === ex.id;
                     return (
-                      <div key={ex.id} style={{ border: "1px solid var(--line)", borderRadius: "var(--r-md)", padding: "8px 10px" }}>
+                      <div key={ex.id} style={{ border: "1px solid var(--line)", borderRadius: "var(--r-md)", padding: editing ? "8px 10px" : "0 6px 0 12px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input className="input" value={ex.name} onChange={(e) => renameExercise(ex.id, e.target.value)} style={{ height: 36, fontSize: 13, flex: 1 }} />
-                          {locked ? (
-                            <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: "var(--violet)", background: "var(--violet-soft)", padding: "5px 9px", borderRadius: 99, textTransform: "uppercase", flexShrink: 0 }}>
-                              <Icon name="lock" size={10} /> {ex.type}
-                            </span>
+                          {editing ? (
+                            <>
+                              <input className="input" value={ex.name} onChange={(e) => renameExercise(ex.id, e.target.value)} style={{ height: 36, fontSize: 13, flex: 1 }} autoFocus />
+                              {locked ? (
+                                <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: "var(--violet)", background: "var(--violet-soft)", padding: "5px 9px", borderRadius: 99, textTransform: "uppercase", flexShrink: 0 }}>
+                                  <Icon name="lock" size={10} /> {ex.type}
+                                </span>
+                              ) : (
+                                <select className="input" value={ex.type} onChange={(e) => setExerciseType(ex.id, e.target.value)} style={{ height: 36, fontSize: 12, width: 92, flexShrink: 0 }}>
+                                  {EXERCISE_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                                </select>
+                              )}
+                              <button onClick={() => setEditingId(null)} aria-label="Done" style={{ width: 34, height: 34, flexShrink: 0, color: "var(--violet)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="check" size={18} /></button>
+                            </>
                           ) : (
-                            <select className="input" value={ex.type} onChange={(e) => setExerciseType(ex.id, e.target.value)} style={{ height: 36, fontSize: 12, width: 96, flexShrink: 0 }}>
-                              {EXERCISE_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-                            </select>
+                            <>
+                              <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, padding: "11px 0" }}>{ex.name}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: "var(--violet)", background: "var(--violet-soft)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", flexShrink: 0 }}>
+                                {locked && <Icon name="lock" size={9} />}{ex.type}
+                              </span>
+                              <button onClick={() => { setEditingId(ex.id); setRemovingId(null); }} aria-label="Edit exercise" style={{ width: 34, height: 34, flexShrink: 0, color: "var(--text-2)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="pencil" size={15} /></button>
+                              <button onClick={() => { setRemovingId(removing ? null : ex.id); setEditingId(null); }} aria-label="Remove exercise" style={{ width: 32, height: 32, flexShrink: 0, color: removing ? "var(--text-2)" : "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name={removing ? "x" : "trash"} size={15} /></button>
+                            </>
                           )}
-                          <button onClick={() => setRemovingId(removing ? null : ex.id)} aria-label="Remove exercise" style={{ width: 32, height: 32, flexShrink: 0, color: removing ? "var(--text-2)" : "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Icon name={removing ? "x" : "trash"} size={15} />
-                          </button>
                         </div>
                         {removing && (
-                          <div style={{ display: "flex", gap: 8, marginTop: 9 }}>
+                          <div style={{ display: "flex", gap: 8, padding: "0 6px 9px" }}>
                             <button onClick={() => archiveExercise(ex.id)} style={{ flex: 1, padding: "9px 0", borderRadius: "var(--r-md)", border: "1px solid var(--line-2)", color: "var(--text)", fontSize: 12, fontWeight: 600 }}>Archive · keep history</button>
                             <button onClick={() => deleteExercise(ex.id)} style={{ flex: 1, padding: "9px 0", borderRadius: "var(--r-md)", background: "var(--coral-soft)", color: "var(--coral)", fontSize: 12, fontWeight: 600 }}>Delete forever</button>
                           </div>
@@ -103,14 +123,26 @@ export default function TrainingPage({ state, update, go, onMenu }) {
               )}
 
               <div style={{ display: "flex", gap: 8 }}>
-                <input className="input" placeholder="Add exercise…" value={f.name} onChange={(e) => setEx(sp.id, { name: e.target.value })} style={{ height: 42, fontSize: 13.5 }} />
-                <select className="input" value={f.type} onChange={(e) => setEx(sp.id, { type: e.target.value })} style={{ height: 42, fontSize: 13, width: 104, flexShrink: 0 }}>
+                <input className="input" placeholder="Search or type an exercise…" value={f.name} onChange={(e) => setEx(sp.id, { name: e.target.value })} style={{ height: 42, fontSize: 13.5 }} />
+                <select className="input" value={f.type} onChange={(e) => setEx(sp.id, { type: e.target.value })} style={{ height: 42, fontSize: 13, width: 100, flexShrink: 0 }}>
                   {EXERCISE_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
                 <button onClick={() => addExercise(sp.id)} aria-label="Add exercise" style={{ width: 42, height: 42, flexShrink: 0, borderRadius: "var(--r-md)", background: "var(--violet)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Icon name="plus" size={18} />
                 </button>
               </div>
+
+              {matches.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  {matches.map((it) => (
+                    <button key={it.name} onClick={() => addLibraryExercise(sp.id, it)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", border: "1px solid var(--line)", borderRadius: "var(--r-md)", textAlign: "left", width: "100%" }}>
+                      <Icon name="plus" size={15} style={{ color: "var(--violet)" }} />
+                      <span style={{ flex: 1, fontSize: 13 }}>{it.name}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase" }}>{it.type}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}

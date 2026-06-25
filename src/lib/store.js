@@ -225,6 +225,31 @@ export const EXERCISE_TYPES = [
   { id: "hold", label: "Hold", hint: "timed seconds" },
 ];
 
+export const EXERCISE_LIBRARY = [
+  { name: "Push-ups", type: "reps" }, { name: "Incline push-ups", type: "reps" }, { name: "Decline push-ups", type: "reps" },
+  { name: "Diamond push-ups", type: "reps" }, { name: "Pike push-ups", type: "reps" }, { name: "Pseudo planche push-ups", type: "reps" },
+  { name: "Archer push-ups", type: "reps" }, { name: "Dips", type: "weighted" }, { name: "Bench press", type: "weighted" },
+  { name: "Incline bench press", type: "weighted" }, { name: "Overhead press", type: "weighted" }, { name: "Dumbbell shoulder press", type: "weighted" },
+  { name: "Lateral raises", type: "weighted" }, { name: "Triceps pushdown", type: "weighted" }, { name: "Triceps extension", type: "weighted" },
+  { name: "Handstand push-ups", type: "reps" }, { name: "Chest fly", type: "weighted" },
+  { name: "Pull-ups", type: "weighted" }, { name: "Chin-ups", type: "weighted" }, { name: "Wide pull-ups", type: "weighted" },
+  { name: "Archer pull-ups", type: "reps" }, { name: "Inverted rows", type: "reps" }, { name: "Australian pull-ups", type: "reps" },
+  { name: "Barbell row", type: "weighted" }, { name: "Dumbbell row", type: "weighted" }, { name: "Lat pulldown", type: "weighted" },
+  { name: "Face pulls", type: "weighted" }, { name: "Biceps curl", type: "weighted" }, { name: "Hammer curl", type: "weighted" },
+  { name: "Muscle-up", type: "reps" }, { name: "Dead hang", type: "hold" }, { name: "Front lever hold", type: "hold" },
+  { name: "Back lever hold", type: "hold" },
+  { name: "Squats", type: "weighted" }, { name: "Front squat", type: "weighted" }, { name: "Goblet squat", type: "weighted" },
+  { name: "Bulgarian split squat", type: "weighted" }, { name: "Pistol squats", type: "reps" }, { name: "Lunges", type: "weighted" },
+  { name: "Romanian deadlift", type: "weighted" }, { name: "Deadlift", type: "weighted" }, { name: "Leg press", type: "weighted" },
+  { name: "Leg curl", type: "weighted" }, { name: "Leg extension", type: "weighted" }, { name: "Calf raises", type: "reps" },
+  { name: "Nordic curl", type: "reps" }, { name: "Glute bridge", type: "weighted" }, { name: "Hip thrust", type: "weighted" },
+  { name: "Box jumps", type: "reps" }, { name: "Wall sit", type: "hold" }, { name: "Step-ups", type: "weighted" },
+  { name: "Plank", type: "hold" }, { name: "Side plank", type: "hold" }, { name: "L-sit", type: "hold" },
+  { name: "Hollow hold", type: "hold" }, { name: "Hanging leg raises", type: "reps" }, { name: "Crunches", type: "reps" },
+  { name: "Russian twists", type: "reps" }, { name: "Ab wheel rollout", type: "reps" }, { name: "Mountain climbers", type: "reps" },
+  { name: "Handstand hold", type: "hold" }, { name: "Toes-to-bar", type: "reps" }, { name: "Bird dog", type: "reps" },
+];
+
 export function exercisesForSplit(state, splitId) {
   return (state.exercises || []).filter((e) => e.splitId === splitId && !e.archived);
 }
