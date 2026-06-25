@@ -4,7 +4,7 @@ import { PageHead } from "./GymPage.jsx";
 import {
   today, weekKey, addDays, dayProtein, proteinTarget, gymStreak,
   levelFromXp, levelName, weeklyTarget, getSplits,
-  exercisePRs, exerciseHistory, exerciseHasData, summarizeEntry,
+  exercisePRs, exerciseHistory, exerciseHasData, summarizeEntry, metricLabel, fmtWeight,
 } from "../lib/store.js";
 
 function lastWeeks(n) {
@@ -22,6 +22,7 @@ export default function ProgressPage({ state, go, onMenu }) {
   const streak = gymStreak(state);
   const wt = weeklyTarget(state);
   const { level } = levelFromXp(state.xp);
+  const unit = state.settings.unit || "kg";
 
   const weeks = lastWeeks(4);
   const heat = weeks.map((wk) =>
@@ -119,8 +120,8 @@ export default function ProgressPage({ state, go, onMenu }) {
           })}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 11, color: "var(--text-2)" }}>
-          <span>{kgs[0]}kg earlier</span>
-          <span style={{ color: "var(--violet)", fontWeight: 600 }}>{kgs[kgs.length - 1]}kg now</span>
+          <span>{fmtWeight(kgs[0], unit)} earlier</span>
+          <span style={{ color: "var(--violet)", fontWeight: 600 }}>{fmtWeight(kgs[kgs.length - 1], unit)} now</span>
         </div>
       </div>
 
@@ -159,7 +160,7 @@ function MiniBars({ data, height = 26 }) {
 
 function StrengthSection({ state }) {
   const [open, setOpen] = useState(null);
-  const U = { reps: "reps", weighted: "kg", hold: "s" };
+  const unit = state.settings.unit || "kg";
   const withData = (state.exercises || []).filter((e) => exerciseHasData(state, e.id));
   const prs = exercisePRs(state).slice(0, 3);
   const splits = getSplits(state);
@@ -189,7 +190,7 @@ function StrengthSection({ state }) {
         <button onClick={() => setOpen(isOpen ? null : ex.id)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 0", textAlign: "left" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 13.5 }}>{ex.name}</div>
-            <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>best {best}{U[ex.type]} · {hist.length} session{hist.length === 1 ? "" : "s"}</div>
+            <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>best {metricLabel(ex.type, best, unit)} · {hist.length} session{hist.length === 1 ? "" : "s"}</div>
           </div>
           <MiniBars data={metrics.slice(-8)} />
           <Icon name={isOpen ? "chevron-up" : "chevron-down"} size={16} style={{ color: "var(--text-3)" }} />
@@ -204,7 +205,7 @@ function StrengthSection({ state }) {
             {hist.slice(-4).reverse().map((h) => (
               <div key={h.date} className="row">
                 <span style={{ fontSize: 12, color: "var(--text-2)" }}>{new Date(h.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
-                <span style={{ fontSize: 12.5, fontFamily: "var(--display)", fontWeight: 500 }}>{summarizeEntry(ex.type, h.entry)}</span>
+                <span style={{ fontSize: 12.5, fontFamily: "var(--display)", fontWeight: 500 }}>{summarizeEntry(ex.type, h.entry, unit)}</span>
               </div>
             ))}
           </div>
@@ -223,7 +224,7 @@ function StrengthSection({ state }) {
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 13px", borderRadius: 99, background: "linear-gradient(135deg, var(--hero-1), var(--hero-2))", color: "#fff" }}>
                 <Icon name="trophy" size={14} style={{ color: "#C6F432" }} />
                 <span style={{ fontSize: 12.5, fontWeight: 600 }}>{p.name}</span>
-                <span style={{ fontSize: 11, color: "#cabff0" }}>{p.metric}{U[p.type]}</span>
+                <span style={{ fontSize: 11, color: "#cabff0" }}>{metricLabel(p.type, p.metric, unit)}</span>
               </div>
             ))}
           </div>

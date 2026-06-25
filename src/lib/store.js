@@ -106,7 +106,7 @@ export function freshState() {
     workouts: {},
     theme: "aurora",
     measurements: [],
-    settings: { notifications: false, dismissed: {}, lastNotified: null },
+    settings: { notifications: false, dismissed: {}, lastNotified: null, unit: "kg" },
   };
 }
 
@@ -128,7 +128,7 @@ function mergeDefaults(saved) {
   merged.workouts = saved.workouts && typeof saved.workouts === "object" ? saved.workouts : {};
   merged.theme = saved.theme || "aurora";
   merged.measurements = Array.isArray(saved.measurements) ? saved.measurements : [];
-  merged.settings = { notifications: false, dismissed: {}, lastNotified: null, ...(saved.settings || {}) };
+  merged.settings = { notifications: false, dismissed: {}, lastNotified: null, unit: "kg", ...(saved.settings || {}) };
   if (!Array.isArray(merged.weightLog) || !merged.weightLog.length) {
     merged.weightLog = [{ date: today(), kg: merged.profile.weight || 80 }];
   }
@@ -251,10 +251,14 @@ export function exercisePRs(state) {
   });
   return prs.sort((a, b) => b.date.localeCompare(a.date));
 }
-export function suggestNext(type, last) {
+export function suggestNext(type, last, unit = "kg") {
   if (!last) return null;
   if (type === "hold") return `aim ${(Number(last.secs) || 0) + 5}s`;
-  if (type === "weighted") return `aim ${Number(last.reps) || 0} × +${(Number(last.kg) || 0) + 2.5}kg`;
+  if (type === "weighted") {
+    const incr = unit === "lbs" ? 5 : 2.5;
+    const cur = Math.round(toUnit(Number(last.kg) || 0, unit) * 2) / 2;
+    return `aim ${Number(last.reps) || 0} × +${cur + incr}${unitLabel(unit)}`;
+  }
   return `aim ${(Number(last.reps) || 0) + 1} reps`;
 }
 // The metric that defines a personal record for each exercise type.
@@ -282,12 +286,26 @@ export function lastExerciseEntry(state, exId, beforeDate) {
   });
   return latest;
 }
-export function summarizeEntry(type, e) {
+export function summarizeEntry(type, e, unit = "kg") {
   if (!e) return "";
   const sets = e.sets ? `${e.sets} × ` : "";
   if (type === "hold") return `${sets}${e.secs || 0}s`;
-  if (type === "weighted") return `${sets}${e.reps || 0}${e.kg ? ` · +${e.kg}kg` : ""}`;
+  if (type === "weighted") return `${sets}${e.reps || 0}${e.kg ? ` · +${fmtWeight(e.kg, unit)}` : ""}`;
   return `${sets}${e.reps || 0}`;
+}
+
+export const LB_PER_KG = 2.2046226;
+export function toUnit(kg, unit) { return unit === "lbs" ? (Number(kg) || 0) * LB_PER_KG : (Number(kg) || 0); }
+export function fromUnit(v, unit) { return unit === "lbs" ? (Number(v) || 0) / LB_PER_KG : (Number(v) || 0); }
+export function unitLabel(unit) { return unit === "lbs" ? "lb" : "kg"; }
+export function fmtWeight(kg, unit = "kg") {
+  if (kg == null || kg === "") return "";
+  return `${Math.round(toUnit(kg, unit) * 2) / 2}${unitLabel(unit)}`;
+}
+export function metricLabel(type, metric, unit = "kg") {
+  if (type === "weighted") return fmtWeight(metric, unit);
+  if (type === "hold") return `${metric}s`;
+  return `${metric} reps`;
 }
 
 // Grants freezes (1 per 4 completed weeks, cap 5) and auto-protects the previous

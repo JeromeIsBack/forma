@@ -2,7 +2,7 @@ import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { MeasurementsSection } from "../components/MeasurementsSection.jsx";
 import { NumberField } from "../components/NumberField.jsx";
-import { proteinTarget, recommendedMultiplier, effectiveMultiplier, today, clamp } from "../lib/store.js";
+import { proteinTarget, recommendedMultiplier, effectiveMultiplier, today, clamp, toUnit, fromUnit, unitLabel, fmtWeight } from "../lib/store.js";
 
 const GOALS = [{ id: "recomp", label: "Recomp" }, { id: "cut", label: "Cut" }, { id: "maintain", label: "Maintain" }, { id: "bulk", label: "Bulk" }];
 const ACTIVITY = [{ id: "light", label: "Light" }, { id: "moderate", label: "Moderate" }, { id: "active", label: "Active" }];
@@ -12,6 +12,7 @@ export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
   const target = proteinTarget(p);
   const effMult = effectiveMultiplier(p);
   const auto = p.autoProtein !== false;
+  const unit = state.settings.unit || "kg";
 
   function setField(key, value) { update((s) => { s.profile[key] = value; return s; }); }
   function commitWeight(kg) {
@@ -38,7 +39,7 @@ export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
 
       <div className="section-label">Body stats</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
-        <NumberField label="Body weight (kg)" value={p.weight} min={30} max={300} unit=" kg" onCommit={commitWeight} />
+        <NumberField key={unit} label={`Body weight (${unitLabel(unit)})`} value={p.weight === "" ? "" : Math.round(toUnit(p.weight, unit) * 2) / 2} min={Math.round(toUnit(30, unit))} max={Math.round(toUnit(300, unit))} unit={` ${unitLabel(unit)}`} onCommit={(n) => commitWeight(Math.round(fromUnit(n, unit) * 10) / 10)} />
         <NumberField label="Height (cm)" value={p.height} min={100} max={250} unit=" cm" onCommit={(n) => setField("height", n)} />
         <NumberField label="Age" value={p.age} min={10} max={100} onCommit={(n) => setField("age", n)} />
         <Field label="Sex"><div className="seg">{["Male", "Female"].map((s) => (<button key={s} className={`seg-opt ${p.sex === s ? "on" : ""}`} onClick={() => setField("sex", s)}>{s}</button>))}</div></Field>
@@ -66,7 +67,7 @@ export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
           <div style={{ fontSize: 12, color: "#cabff0", marginTop: 3 }}>daily protein target</div>
         </div>
         <div style={{ fontSize: 11, color: "#cabff0", textAlign: "right", maxWidth: 140, lineHeight: 1.45 }}>
-          {p.weight || 0}kg × {effMult.toFixed(1)} g/kg
+          {fmtWeight(p.weight, unit)} · {effMult.toFixed(1)} g/kg
           {auto && <div style={{ marginTop: 4 }}>tuned by goal, training, age &amp; build</div>}
         </div>
       </div>

@@ -5,7 +5,7 @@ import { MenuButton } from "../components/NavDrawer.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
 import {
   getSplits, weeklyTarget, today, weekKey, gymThisWeek, gymStreak,
-  exercisesForSplit, lastExerciseEntry, exerciseBest, workoutMetric, summarizeEntry, suggestNext,
+  exercisesForSplit, lastExerciseEntry, exerciseBest, workoutMetric, summarizeEntry, suggestNext, toUnit, fromUnit, unitLabel,
 } from "../lib/store.js";
 
 const str = (v) => (v == null ? "" : String(v));
@@ -114,13 +114,14 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
 
 function WorkoutDetails({ state, update, splitId, go, celebrate }) {
   const exercises = exercisesForSplit(state, splitId);
+  const unit = state.settings.unit || "kg";
   const todayWk = state.workouts[today()];
   const [draft, setDraft] = useState(() => {
     const init = {};
     exercises.forEach((ex) => {
       const cur = todayWk && todayWk.exercises && todayWk.exercises[ex.id];
       init[ex.id] = cur
-        ? { sets: str(cur.sets), reps: str(cur.reps), kg: str(cur.kg), secs: str(cur.secs) }
+        ? { sets: str(cur.sets), reps: str(cur.reps), kg: cur.kg != null ? str(Math.round(toUnit(cur.kg, unit) * 2) / 2) : "", secs: str(cur.secs) }
         : { sets: "", reps: "", kg: "", secs: "" };
     });
     return init;
@@ -143,7 +144,7 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
   function copyLast(ex) {
     const last = lastExerciseEntry(state, ex.id, today());
     if (!last) return;
-    setDraft((d) => ({ ...d, [ex.id]: { sets: str(last.sets), reps: str(last.reps), kg: str(last.kg), secs: str(last.secs) } }));
+    setDraft((d) => ({ ...d, [ex.id]: { sets: str(last.sets), reps: str(last.reps), kg: last.kg != null ? str(Math.round(toUnit(last.kg, unit) * 2) / 2) : "", secs: str(last.secs) } }));
   }
   function save() {
     const entries = {}; const prs = [];
@@ -151,7 +152,7 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
       const dr = draft[ex.id];
       const sets = parseInt(dr.sets) || 0;
       const reps = parseInt(dr.reps) || 0;
-      const kg = parseFloat(dr.kg) || 0;
+      const kg = Math.round(fromUnit(parseFloat(dr.kg) || 0, unit) * 10) / 10;
       const secs = parseInt(dr.secs) || 0;
       const has = sets > 0 && ((ex.type === "hold" && secs > 0) || (ex.type !== "hold" && reps > 0));
       if (!has) return;
@@ -183,8 +184,8 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
               <span style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 13.5 }}>{ex.name}</span>
               {last
                 ? <button onClick={() => copyLast(ex)} style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                    <span style={{ fontSize: 11, color: "var(--violet)", display: "flex", alignItems: "center", gap: 4 }}><Icon name="rotate-2" size={12} /> last: {summarizeEntry(ex.type, last)}</span>
-                    <span style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1 }}>{suggestNext(ex.type, last)}</span>
+                    <span style={{ fontSize: 11, color: "var(--violet)", display: "flex", alignItems: "center", gap: 4 }}><Icon name="rotate-2" size={12} /> last: {summarizeEntry(ex.type, last, unit)}</span>
+                    <span style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1 }}>{suggestNext(ex.type, last, unit)}</span>
                   </button>
                 : <span style={{ fontSize: 10.5, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{ex.type}</span>}
             </div>
@@ -194,7 +195,7 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
                 ? <MiniInput label="secs" value={dr.secs} onChange={(v) => setF(ex.id, "secs", v)} />
                 : <>
                     <MiniInput label="reps" value={dr.reps} onChange={(v) => setF(ex.id, "reps", v)} />
-                    {ex.type === "weighted" && <MiniInput label="+kg" value={dr.kg} onChange={(v) => setF(ex.id, "kg", v)} />}
+                    {ex.type === "weighted" && <MiniInput label={`+${unitLabel(unit)}`} value={dr.kg} onChange={(v) => setF(ex.id, "kg", v)} />}
                   </>}
             </div>
           </div>

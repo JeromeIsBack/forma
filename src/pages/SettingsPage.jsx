@@ -6,6 +6,8 @@ import { requestPermission, permissionStatus, showNotification } from "../lib/no
 
 export default function SettingsPage({ state, update, replace, go, onMenu, celebrate }) {
   const [perm, setPerm] = useState(permissionStatus());
+  const unit = state.settings.unit || "kg";
+  function setUnit(u) { update((s) => { s.settings.unit = u; return s; }); }
 
   function setTheme(id) { update((s) => { s.theme = id; return s; }); }
 
@@ -54,6 +56,15 @@ export default function SettingsPage({ state, update, replace, go, onMenu, celeb
             </button>
           );
         })}
+      </div>
+
+      <div className="section-label">Units</div>
+      <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 13.5, color: "var(--text-2)" }}>Weight unit</span>
+        <div className="seg" style={{ width: 150 }}>
+          <button className={`seg-opt ${unit === "kg" ? "on" : ""}`} onClick={() => setUnit("kg")}>kg</button>
+          <button className={`seg-opt ${unit === "lbs" ? "on" : ""}`} onClick={() => setUnit("lbs")}>lbs</button>
+        </div>
       </div>
 
       <div className="section-label">Notifications</div>
