@@ -72,6 +72,20 @@ export default function ProgressPage({ state, go, onMenu }) {
         </div>
       </div>
 
+      <div className="card" style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 14 }}>
+        <div style={{ width: 42, height: 42, borderRadius: 12, background: "var(--violet-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon name="shield-half-filled" size={22} style={{ color: "var(--violet)" }} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 14 }}>
+            {state.freezes || 0} streak freeze{(state.freezes || 0) === 1 ? "" : "s"}
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--text-2)", marginTop: 2, lineHeight: 1.4 }}>
+            Auto-saves your streak if you miss a week. Earn one every 4 completed weeks (max 5).
+          </div>
+        </div>
+      </div>
+
       <div className="section-label">Protein — hit / miss</div>
       <div className="card">
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>

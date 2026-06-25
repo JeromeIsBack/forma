@@ -88,6 +88,10 @@ export function freshState() {
     xp: 0,
     achvBaseline: {},
     achvUnlocked: [],
+    freezes: 1,
+    freezesEarned: 0,
+    frozenWeeks: [],
+    presets: [],
     theme: "aurora",
     measurements: [],
     settings: { notifications: false, dismissed: {}, lastNotified: null },
@@ -104,6 +108,10 @@ function mergeDefaults(saved) {
     ? saved.sources.map((s) => ({ type: "Other", ...s })) : base.sources;
   merged.achvBaseline = saved.achvBaseline || {};
   merged.achvUnlocked = saved.achvUnlocked || [];
+  merged.freezes = typeof saved.freezes === "number" ? saved.freezes : 1;
+  merged.freezesEarned = saved.freezesEarned || 0;
+  merged.frozenWeeks = Array.isArray(saved.frozenWeeks) ? saved.frozenWeeks : [];
+  merged.presets = Array.isArray(saved.presets) ? saved.presets : [];
   merged.theme = saved.theme || "aurora";
   merged.measurements = Array.isArray(saved.measurements) ? saved.measurements : [];
   merged.settings = { notifications: false, dismissed: {}, lastNotified: null, ...(saved.settings || {}) };
@@ -178,13 +186,47 @@ export function gymThisWeek(state, date = today()) {
 }
 export function gymStreak(state) {
   const target = weeklyTarget(state);
+  const frozen = new Set(state.frozenWeeks || []);
   const weeks = {};
   Object.keys(state.gym).forEach((d) => { const w = weekKey(d); weeks[w] = (weeks[w] || 0) + 1; });
+  const good = (w) => weeks[w] >= target || frozen.has(w);
   let streak = 0;
   let cursor = weekKey(today());
-  if (!(weeks[cursor] >= target)) cursor = addDays(cursor, -7);
-  while (weeks[cursor] >= target) { streak += 1; cursor = addDays(cursor, -7); }
+  if (!good(cursor)) cursor = addDays(cursor, -7);
+  while (good(cursor)) { streak += 1; cursor = addDays(cursor, -7); }
   return streak;
+}
+
+export function completedWeeks(state) {
+  const target = weeklyTarget(state);
+  const counts = {};
+  Object.keys(state.gym).forEach((d) => { const w = weekKey(d); counts[w] = (counts[w] || 0) + 1; });
+  return Object.values(counts).filter((c) => c >= target).length;
+}
+
+// Grants freezes (1 per 4 completed weeks, cap 5) and auto-protects the previous
+// week if it was missed while a streak was alive. Mutates state; returns freezes used.
+export function reconcileFreezes(s) {
+  const target = weeklyTarget(s);
+  const counts = {};
+  Object.keys(s.gym).forEach((d) => { const w = weekKey(d); counts[w] = (counts[w] || 0) + 1; });
+  const completed = Object.values(counts).filter((c) => c >= target).length;
+  const earned = Math.floor(completed / 4);
+  if (earned > (s.freezesEarned || 0)) {
+    s.freezes = Math.min(5, (s.freezes || 0) + (earned - (s.freezesEarned || 0)));
+    s.freezesEarned = earned;
+  }
+  const frozen = new Set(s.frozenWeeks || []);
+  let used = 0;
+  const cur = weekKey(today());
+  const prev = addDays(cur, -7);
+  const prev2 = addDays(cur, -14);
+  const isGood = (w) => counts[w] >= target || frozen.has(w);
+  if (!isGood(prev) && isGood(prev2) && (s.freezes || 0) > 0) {
+    frozen.add(prev); s.freezes -= 1; used += 1;
+  }
+  s.frozenWeeks = [...frozen];
+  return used;
 }
 
 export function totalGym(state) { return Object.keys(state.gym).length; }

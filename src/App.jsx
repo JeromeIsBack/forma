@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useStore, levelFromXp, totalTierScore, measurementDue, today } from "./lib/store.js";
+import { useStore, levelFromXp, totalTierScore, measurementDue, today, reconcileFreezes } from "./lib/store.js";
 import { burst, Icon } from "./components/ui.jsx";
 import { NavDrawer } from "./components/NavDrawer.jsx";
 import { BottomNav } from "./components/BottomNav.jsx";
@@ -24,6 +24,7 @@ export default function App() {
   const prevTierScore = useRef(null);
   const toastTimer = useRef();
   const reminded = useRef(false);
+  const freezeChecked = useRef(false);
 
   function showToast(kind, text) {
     clearTimeout(toastTimer.current);
@@ -47,6 +48,15 @@ export default function App() {
   }, [state]);
 
   useEffect(() => { registerSW(); }, []);
+
+  useEffect(() => {
+    if (!state || freezeChecked.current) return;
+    freezeChecked.current = true;
+    const probe = structuredClone(state);
+    const used = reconcileFreezes(probe);
+    update((s) => { reconcileFreezes(s); return s; });
+    if (used > 0) showToast("level", used === 1 ? "Streak freeze used — streak saved!" : `${used} streak freezes used`);
+  }, [state]);
 
   useEffect(() => {
     if (state && state.theme) document.documentElement.setAttribute("data-theme", state.theme);

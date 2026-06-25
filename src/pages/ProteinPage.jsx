@@ -12,11 +12,15 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: "", avg: "", unit: "", type: "Meat" });
   const [customG, setCustomG] = useState("");
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [presetName, setPresetName] = useState("");
 
   const target = proteinTarget(state.profile);
   const total = Math.round(dayProtein(state, today()));
   const pct = Math.min((total / target) * 100, 100);
   const entry = state.protein[today()] || {};
+  const presets = state.presets || [];
+  const hasToday = Object.keys(entry).length > 0;
 
   const typesPresent = ["All", ...SOURCE_TYPES.filter((t) => state.sources.some((s) => s.type === t))];
   const q = search.trim().toLowerCase();
@@ -57,6 +61,31 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   function clearCustom() {
     update((s) => { if (s.protein[today()]) { delete s.protein[today()]._custom; if (Object.keys(s.protein[today()]).length === 0) delete s.protein[today()]; } return s; });
   }
+  function presetTotal(pr) {
+    let t = pr.customG || 0;
+    Object.entries(pr.items || {}).forEach(([id, serv]) => { const src = state.sources.find((x) => x.id === id); if (src) t += src.avg * serv; });
+    return Math.round(t);
+  }
+  function logPreset(pr) {
+    const wasUnder = total < target;
+    const added = presetTotal(pr);
+    update((s) => {
+      if (!s.protein[today()]) s.protein[today()] = {};
+      Object.entries(pr.items || {}).forEach(([id, serv]) => { s.protein[today()][id] = (s.protein[today()][id] || 0) + serv; });
+      if (pr.customG) s.protein[today()]._custom = (s.protein[today()]._custom || 0) + pr.customG;
+      return s;
+    });
+    celebrate("win", wasUnder && total + added >= target ? "Target hit · " + pr.name : pr.name + " logged");
+  }
+  function savePreset() {
+    if (!hasToday || !presetName.trim()) return;
+    const items = {}; let customG = 0;
+    Object.entries(entry).forEach(([id, v]) => { if (id === "_custom") customG = v; else items[id] = v; });
+    if (!Object.keys(items).length && !customG) return;
+    update((s) => { if (!s.presets) s.presets = []; s.presets.push({ id: "pr" + Date.now(), name: presetName.trim(), items, customG }); return s; });
+    setPresetName(""); setSavingPreset(false);
+  }
+  function deletePreset(id) { update((s) => { s.presets = (s.presets || []).filter((p) => p.id !== id); return s; }); }
   function updateSource(id, field, value) {
     update((s) => { const src = s.sources.find((x) => x.id === id); if (src) { if (field === "avg") src.avg = clamp(Math.round(parseFloat(value) || 0), 0, 300); else src[field] = value; } return s; });
   }
@@ -124,6 +153,38 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
             <button onClick={clearCustom} aria-label="Clear one-off" style={{ color: "var(--text-2)", display: "flex" }}><Icon name="x" size={16} /></button>
           </div>
         )}
+      </div>
+
+      <div className="section-label">Meal presets · one-tap</div>
+      <div className="card">
+        {presets.length === 0 && !savingPreset && (
+          <div style={{ fontSize: 12.5, color: "var(--text-2)", marginBottom: hasToday ? 12 : 0, lineHeight: 1.4 }}>Save a go-to combo (your usual breakfast, post-gym shake) and log it in one tap.</div>
+        )}
+        {presets.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            {presets.map((pr) => (
+              <div key={pr.id} style={{ display: "flex", alignItems: "center", border: "1px solid var(--line)", borderRadius: 99, overflow: "hidden", background: "var(--paper)" }}>
+                <button onClick={() => logPreset(pr)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 5px 8px 13px", color: "var(--text)" }}>
+                  <Icon name="bolt" size={14} style={{ color: "var(--violet)" }} />
+                  <span style={{ fontSize: 12.5, fontWeight: 600 }}>{pr.name}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-2)" }}>{presetTotal(pr)}g</span>
+                </button>
+                <button onClick={() => deletePreset(pr.id)} aria-label="Delete preset" style={{ padding: "8px 11px 8px 6px", color: "var(--text-3)" }}><Icon name="x" size={13} /></button>
+              </div>
+            ))}
+          </div>
+        )}
+        {savingPreset ? (
+          <div style={{ display: "flex", gap: 9 }}>
+            <input className="input" placeholder="Preset name" value={presetName} maxLength={28} onChange={(e) => setPresetName(e.target.value)} />
+            <button onClick={savePreset} style={{ padding: "0 18px", flexShrink: 0, borderRadius: "var(--r-md)", background: "var(--violet)", color: "#fff", fontFamily: "var(--display)", fontWeight: 600, fontSize: 14 }}>Save</button>
+            <button onClick={() => { setSavingPreset(false); setPresetName(""); }} aria-label="Cancel" style={{ padding: "0 13px", border: "1px solid var(--line-2)", borderRadius: "var(--r-md)", color: "var(--text-2)" }}><Icon name="x" size={15} /></button>
+          </div>
+        ) : hasToday ? (
+          <button onClick={() => setSavingPreset(true)} style={{ width: "100%", padding: 11, border: "1px dashed var(--line-2)", borderRadius: "var(--r-md)", color: "var(--text-2)", fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+            <Icon name="bookmark-plus" size={15} /> Save today's log as a preset
+          </button>
+        ) : null}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 2px 12px" }}>

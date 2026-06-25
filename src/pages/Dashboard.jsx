@@ -96,7 +96,7 @@ export default function Dashboard({ state, go, onMenu }) {
 
       <motion.div {...fade(3)} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: 14 }}>
         <Tile onClick={() => go("gym")} bg="var(--violet)" icon="barbell" label="Gym" big={`${sessions}/${wt}`} hint="this week" />
-        <Tile onClick={() => go("progress")} bg="var(--coral)" icon="flame" label="Streak" big={String(streak)} hint={streak === 1 ? "week alive" : "weeks alive"} />
+        <Tile onClick={() => go("progress")} bg="var(--coral)" icon="flame" label="Streak" big={String(streak)} hint={streak === 1 ? "week alive" : "weeks alive"} badge={state.freezes > 0 ? state.freezes : null} />
       </motion.div>
 
       <motion.div {...fade(4)} className="card" style={{ marginBottom: 14 }}>
@@ -147,13 +147,19 @@ function Medal({ ach, t }) {
   );
 }
 
-function Tile({ onClick, bg, icon, label, big, hint }) {
+function Tile({ onClick, bg, icon, label, big, hint, badge }) {
   return (
     <button onClick={onClick} style={{ textAlign: "left", borderRadius: "var(--r-lg)", padding: 16, color: "#fff", background: bg, position: "relative" }}>
       <Icon name={icon} size={20} style={{ position: "absolute", top: 14, right: 14, opacity: 0.9 }} />
       <div style={{ fontSize: 12.5, fontWeight: 600, opacity: 0.92 }}>{label}</div>
       <div className="num" style={{ fontSize: 30, marginTop: 10 }}>{big}</div>
       <div style={{ fontSize: 11, opacity: 0.85, marginTop: 3 }}>{hint}</div>
+      {badge != null && (
+        <div style={{ position: "absolute", bottom: 12, right: 12, display: "flex", alignItems: "center", gap: 3, background: "rgba(0,0,0,0.22)", padding: "3px 8px", borderRadius: 99 }}>
+          <Icon name="shield-half-filled" size={12} />
+          <span className="num" style={{ fontSize: 12 }}>{badge}</span>
+        </div>
+      )}
     </button>
   );
 }
