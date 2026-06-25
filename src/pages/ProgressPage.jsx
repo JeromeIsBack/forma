@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Icon, Ring } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import {
   today, weekKey, addDays, dayProtein, proteinTarget, gymStreak,
-  levelFromXp, levelName, weeklyTarget,
+  levelFromXp, levelName, weeklyTarget, getSplits,
+  exercisePRs, exerciseHistory, exerciseHasData, summarizeEntry,
 } from "../lib/store.js";
 
 function lastWeeks(n) {
@@ -86,6 +88,8 @@ export default function ProgressPage({ state, go, onMenu }) {
         </div>
       </div>
 
+      <StrengthSection state={state} />
+
       <div className="section-label">Protein — hit / miss</div>
       <div className="card">
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -138,5 +142,108 @@ function Stat({ value, label }) {
       <div className="num" style={{ fontSize: 24 }}>{value}</div>
       <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 4 }}>{label}</div>
     </div>
+  );
+}
+
+function MiniBars({ data, height = 26 }) {
+  if (!data.length) return null;
+  const max = Math.max(...data, 1);
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height }}>
+      {data.map((v, i) => (
+        <div key={i} style={{ width: 6, height: `${Math.max(14, (v / max) * 100)}%`, background: "var(--violet)", borderRadius: "2px 2px 0 0", opacity: 0.4 + (i / data.length) * 0.6 }} />
+      ))}
+    </div>
+  );
+}
+
+function StrengthSection({ state }) {
+  const [open, setOpen] = useState(null);
+  const U = { reps: "reps", weighted: "kg", hold: "s" };
+  const withData = (state.exercises || []).filter((e) => exerciseHasData(state, e.id));
+  const prs = exercisePRs(state).slice(0, 3);
+  const splits = getSplits(state);
+
+  if (withData.length === 0) {
+    return (
+      <>
+        <div className="section-label">Strength progression</div>
+        <div className="card" style={{ textAlign: "center", fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.5 }}>
+          Log what you did in the Gym tab and your per-exercise progress and PRs show up here.
+        </div>
+      </>
+    );
+  }
+
+  const groups = splits.map((sp) => ({ sp, exs: withData.filter((e) => e.splitId === sp.id && !e.archived) })).filter((x) => x.exs.length);
+  const archived = withData.filter((e) => e.archived);
+
+  function Row(ex) {
+    const hist = exerciseHistory(state, ex.id, ex.type);
+    const metrics = hist.map((h) => h.metric);
+    const best = Math.max(...metrics, 0);
+    const isOpen = open === ex.id;
+    const mx = Math.max(...metrics, 1);
+    return (
+      <div key={ex.id} style={{ borderTop: "1px solid var(--line)" }}>
+        <button onClick={() => setOpen(isOpen ? null : ex.id)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 0", textAlign: "left" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 13.5 }}>{ex.name}</div>
+            <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>best {best}{U[ex.type]} · {hist.length} session{hist.length === 1 ? "" : "s"}</div>
+          </div>
+          <MiniBars data={metrics.slice(-8)} />
+          <Icon name={isOpen ? "chevron-up" : "chevron-down"} size={16} style={{ color: "var(--text-3)" }} />
+        </button>
+        {isOpen && (
+          <div style={{ padding: "2px 0 14px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 54, marginBottom: 10 }}>
+              {hist.slice(-12).map((h, i) => (
+                <div key={i} style={{ flex: 1, height: `${Math.max(14, (h.metric / mx) * 100)}%`, background: "linear-gradient(180deg, var(--violet), #5DE0C4)", borderRadius: "3px 3px 0 0" }} />
+              ))}
+            </div>
+            {hist.slice(-4).reverse().map((h) => (
+              <div key={h.date} className="row">
+                <span style={{ fontSize: 12, color: "var(--text-2)" }}>{new Date(h.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
+                <span style={{ fontSize: 12.5, fontFamily: "var(--display)", fontWeight: 500 }}>{summarizeEntry(ex.type, h.entry)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {prs.length > 0 && (
+        <>
+          <div className="section-label">Recent PRs</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginBottom: 4 }}>
+            {prs.map((p, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 13px", borderRadius: 99, background: "linear-gradient(135deg, var(--hero-1), var(--hero-2))", color: "#fff" }}>
+                <Icon name="trophy" size={14} style={{ color: "#C6F432" }} />
+                <span style={{ fontSize: 12.5, fontWeight: 600 }}>{p.name}</span>
+                <span style={{ fontSize: 11, color: "#cabff0" }}>{p.metric}{U[p.type]}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="section-label">Strength progression</div>
+      <div className="card">
+        {groups.map((g, gi) => (
+          <div key={g.sp.id} style={{ marginTop: gi === 0 ? 0 : 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: g.sp.color, textTransform: "uppercase", letterSpacing: "0.05em", paddingBottom: 2 }}>{g.sp.label}</div>
+            {g.exs.map(Row)}
+          </div>
+        ))}
+        {archived.length > 0 && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.05em", paddingBottom: 2 }}>Archived</div>
+            {archived.map(Row)}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
-import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, exercisesForSplit } from "../lib/store.js";
+import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, exercisesForSplit, exerciseHasData } from "../lib/store.js";
 
 export default function TrainingPage({ state, update, go, onMenu }) {
   const splits = getSplits(state);
   const wt = weeklyTarget(state);
   const [exDraft, setExDraft] = useState({});
+  const [removingId, setRemovingId] = useState(null);
+  const archived = (state.exercises || []).filter((e) => e.archived);
 
   function setSplitLabel(id, label) { update((s) => { const sp = s.routine.splits.find((x) => x.id === id); if (sp) sp.label = label; return s; }); }
   function removeSplit(id) { update((s) => { if (s.routine.splits.length <= 1) return s; s.routine.splits = s.routine.splits.filter((x) => x.id !== id); s.exercises = (s.exercises || []).filter((e) => e.splitId !== id); return s; }); }
@@ -21,7 +23,12 @@ export default function TrainingPage({ state, update, go, onMenu }) {
     update((s) => { if (!s.exercises) s.exercises = []; s.exercises.push({ id: "ex" + Date.now(), name: f.name.trim(), type: f.type, splitId }); return s; });
     setExDraft((d) => ({ ...d, [splitId]: { name: "", type: f.type } }));
   }
-  function removeExercise(id) { update((s) => { s.exercises = (s.exercises || []).filter((e) => e.id !== id); return s; }); }
+  function renameExercise(id, name) { update((s) => { const e = s.exercises.find((x) => x.id === id); if (e) e.name = name; return s; }); }
+  function setExerciseType(id, type) { update((s) => { const e = s.exercises.find((x) => x.id === id); if (e && !exerciseHasData(s, id)) e.type = type; return s; }); }
+  function archiveExercise(id) { update((s) => { const e = s.exercises.find((x) => x.id === id); if (e) e.archived = true; return s; }); setRemovingId(null); }
+  function restoreExercise(id) { update((s) => { const e = s.exercises.find((x) => x.id === id); if (e) e.archived = false; return s; }); }
+  function deleteExercise(id) { update((s) => { s.exercises = (s.exercises || []).filter((x) => x.id !== id); Object.values(s.workouts || {}).forEach((w) => { if (w.exercises) delete w.exercises[id]; }); return s; }); setRemovingId(null); }
+  const splitLabel = (id) => (splits.find((x) => x.id === id) || {}).label || "—";
 
   return (
     <div className="app">
@@ -62,14 +69,36 @@ export default function TrainingPage({ state, update, go, onMenu }) {
               </div>
 
               {exs.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 11 }}>
-                  {exs.map((ex) => (
-                    <div key={ex.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 11px", background: "var(--cloud)", borderRadius: "var(--r-md)" }}>
-                      <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{ex.name}</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--violet)", background: "var(--violet-soft)", padding: "2px 8px", borderRadius: 99, textTransform: "uppercase" }}>{ex.type}</span>
-                      <button onClick={() => removeExercise(ex.id)} aria-label="Remove exercise" style={{ color: "var(--text-3)", display: "flex" }}><Icon name="x" size={14} /></button>
-                    </div>
-                  ))}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 11 }}>
+                  {exs.map((ex) => {
+                    const locked = exerciseHasData(state, ex.id);
+                    const removing = removingId === ex.id;
+                    return (
+                      <div key={ex.id} style={{ border: "1px solid var(--line)", borderRadius: "var(--r-md)", padding: "8px 10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input className="input" value={ex.name} onChange={(e) => renameExercise(ex.id, e.target.value)} style={{ height: 36, fontSize: 13, flex: 1 }} />
+                          {locked ? (
+                            <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: "var(--violet)", background: "var(--violet-soft)", padding: "5px 9px", borderRadius: 99, textTransform: "uppercase", flexShrink: 0 }}>
+                              <Icon name="lock" size={10} /> {ex.type}
+                            </span>
+                          ) : (
+                            <select className="input" value={ex.type} onChange={(e) => setExerciseType(ex.id, e.target.value)} style={{ height: 36, fontSize: 12, width: 96, flexShrink: 0 }}>
+                              {EXERCISE_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                            </select>
+                          )}
+                          <button onClick={() => setRemovingId(removing ? null : ex.id)} aria-label="Remove exercise" style={{ width: 32, height: 32, flexShrink: 0, color: removing ? "var(--text-2)" : "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Icon name={removing ? "x" : "trash"} size={15} />
+                          </button>
+                        </div>
+                        {removing && (
+                          <div style={{ display: "flex", gap: 8, marginTop: 9 }}>
+                            <button onClick={() => archiveExercise(ex.id)} style={{ flex: 1, padding: "9px 0", borderRadius: "var(--r-md)", border: "1px solid var(--line-2)", color: "var(--text)", fontSize: 12, fontWeight: 600 }}>Archive · keep history</button>
+                            <button onClick={() => deleteExercise(ex.id)} style={{ flex: 1, padding: "9px 0", borderRadius: "var(--r-md)", background: "var(--coral-soft)", color: "var(--coral)", fontSize: 12, fontWeight: 600 }}>Delete forever</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -89,6 +118,24 @@ export default function TrainingPage({ state, update, go, onMenu }) {
           <Icon name="plus" size={15} /> Add a split
         </button>
       </div>
+
+      {archived.length > 0 && (
+        <>
+          <div className="section-label">Archived exercises</div>
+          <div className="card">
+            {archived.map((ex, i) => (
+              <div key={ex.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--line)" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{ex.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>{splitLabel(ex.splitId)} · {ex.type} · history kept</div>
+                </div>
+                <button onClick={() => restoreExercise(ex.id)} style={{ padding: "7px 13px", borderRadius: "var(--r-md)", border: "1px solid var(--line-2)", color: "var(--violet)", fontSize: 12, fontWeight: 600, flexShrink: 0 }}>Restore</button>
+                <button onClick={() => deleteExercise(ex.id)} aria-label="Delete permanently" style={{ width: 34, height: 34, flexShrink: 0, borderRadius: "var(--r-md)", border: "1px solid var(--line)", color: "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="trash" size={15} /></button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <PresetBuilder state={state} update={update} />
     </div>

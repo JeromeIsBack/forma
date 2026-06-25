@@ -146,6 +146,7 @@ export function weeklyTarget(state) {
 
 export const XP_PER_GYM = 50;
 export const XP_PER_PROTEIN_HIT = 45;
+export const XP_PER_PR = 20;
 
 export function levelFromXp(xp) {
   let level = 1, need = 300, acc = 0;
@@ -225,7 +226,36 @@ export const EXERCISE_TYPES = [
 ];
 
 export function exercisesForSplit(state, splitId) {
-  return (state.exercises || []).filter((e) => e.splitId === splitId);
+  return (state.exercises || []).filter((e) => e.splitId === splitId && !e.archived);
+}
+export function exerciseHasData(state, exId) {
+  return Object.values(state.workouts || {}).some((w) => w.exercises && w.exercises[exId]);
+}
+export function exerciseHistory(state, exId, type) {
+  const out = [];
+  Object.entries(state.workouts || {}).forEach(([date, w]) => {
+    const e = w.exercises && w.exercises[exId];
+    if (e) out.push({ date, metric: workoutMetric(type, e), entry: e });
+  });
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+// Each time an exercise beats its prior best (after the first entry) counts as a PR.
+export function exercisePRs(state) {
+  const prs = [];
+  (state.exercises || []).forEach((ex) => {
+    const hist = exerciseHistory(state, ex.id, ex.type);
+    let best = 0;
+    hist.forEach((h) => {
+      if (h.metric > best) { if (best > 0) prs.push({ exId: ex.id, name: ex.name, type: ex.type, date: h.date, metric: h.metric, entry: h.entry }); best = h.metric; }
+    });
+  });
+  return prs.sort((a, b) => b.date.localeCompare(a.date));
+}
+export function suggestNext(type, last) {
+  if (!last) return null;
+  if (type === "hold") return `aim ${(Number(last.secs) || 0) + 5}s`;
+  if (type === "weighted") return `aim ${Number(last.reps) || 0} × +${(Number(last.kg) || 0) + 2.5}kg`;
+  return `aim ${(Number(last.reps) || 0) + 1} reps`;
 }
 // The metric that defines a personal record for each exercise type.
 export function workoutMetric(type, entry) {
@@ -467,7 +497,8 @@ export function recomputeXp(state) {
   const proteinXp = Object.keys(state.protein).filter(
     (d) => dayProtein(state, d) >= proteinTarget(state.profile)
   ).length * XP_PER_PROTEIN_HIT;
-  return gymXp + proteinXp;
+  const prXp = exercisePRs(state).length * XP_PER_PR;
+  return gymXp + proteinXp + prXp;
 }
 
 function maintainUnlocks(next) {

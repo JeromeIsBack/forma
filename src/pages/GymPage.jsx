@@ -5,7 +5,7 @@ import { MenuButton } from "../components/NavDrawer.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
 import {
   getSplits, weeklyTarget, today, weekKey, gymThisWeek, gymStreak,
-  exercisesForSplit, lastExerciseEntry, exerciseBest, workoutMetric, summarizeEntry,
+  exercisesForSplit, lastExerciseEntry, exerciseBest, workoutMetric, summarizeEntry, suggestNext,
 } from "../lib/store.js";
 
 const str = (v) => (v == null ? "" : String(v));
@@ -182,7 +182,10 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
               <span style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 13.5 }}>{ex.name}</span>
               {last
-                ? <button onClick={() => copyLast(ex)} style={{ fontSize: 11, color: "var(--violet)", display: "flex", alignItems: "center", gap: 4 }}><Icon name="rotate-2" size={12} /> last: {summarizeEntry(ex.type, last)}</button>
+                ? <button onClick={() => copyLast(ex)} style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <span style={{ fontSize: 11, color: "var(--violet)", display: "flex", alignItems: "center", gap: 4 }}><Icon name="rotate-2" size={12} /> last: {summarizeEntry(ex.type, last)}</span>
+                    <span style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1 }}>{suggestNext(ex.type, last)}</span>
+                  </button>
                 : <span style={{ fontSize: 10.5, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{ex.type}</span>}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
