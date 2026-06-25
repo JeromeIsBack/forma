@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Icon, Ring } from "../components/ui.jsx";
 import { MenuButton } from "../components/NavDrawer.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
+import { DateNav } from "../components/DateNav.jsx";
 import {
   getSplits, weeklyTarget, today, weekKey, gymThisWeek, gymStreak,
   exercisesForSplit, lastExerciseEntry, exerciseBest, workoutMetric, summarizeEntry, suggestNext, toUnit, fromUnit, unitLabel,
@@ -11,11 +12,12 @@ import {
 const str = (v) => (v == null ? "" : String(v));
 
 export default function GymPage({ state, update, go, onMenu, celebrate }) {
+  const [date, setDate] = useState(today());
   const splits = getSplits(state);
   const target = weeklyTarget(state);
   const sessions = gymThisWeek(state);
   const streak = gymStreak(state);
-  const todaySplit = state.gym[today()];
+  const todaySplit = state.gym[date];
   const rotation = splits.map((s) => s.id);
 
   const gymNote = sessions >= target
@@ -31,10 +33,10 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
     : rotation[0];
 
   function logSplit(id) {
-    const wasOn = state.gym[today()] === id;
+    const wasOn = state.gym[date] === id;
     update((s) => {
-      if (s.gym[today()] === id) { delete s.gym[today()]; if (s.workouts[today()]) delete s.workouts[today()]; }
-      else s.gym[today()] = id;
+      if (s.gym[date] === id) { delete s.gym[date]; if (s.workouts[date]) delete s.workouts[date]; }
+      else s.gym[date] = id;
       return s;
     });
     if (!wasOn) celebrate("win", "Session logged · +50 XP");
@@ -59,7 +61,9 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
 
       <GoalCoach goal={state.profile.goal} context="training" note={gymNote} />
 
-      <div className="section-label">{todaySplit ? "Logged today" : "Log today's session"}</div>
+      <DateNav value={date} onChange={setDate} />
+
+      <div className="section-label">{todaySplit ? "Logged this day" : "Log a session"}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {splits.map((sp) => {
           const on = todaySplit === sp.id;
@@ -87,7 +91,7 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
       {todaySplit && (
         <>
           <div className="section-label">What you did · optional</div>
-          <WorkoutDetails key={todaySplit} state={state} update={update} splitId={todaySplit} go={go} celebrate={celebrate} />
+          <WorkoutDetails key={date + todaySplit} state={state} update={update} splitId={todaySplit} date={date} go={go} celebrate={celebrate} />
         </>
       )}
 
@@ -112,10 +116,10 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
   );
 }
 
-function WorkoutDetails({ state, update, splitId, go, celebrate }) {
+function WorkoutDetails({ state, update, splitId, date, go, celebrate }) {
   const exercises = exercisesForSplit(state, splitId);
   const unit = state.settings.unit || "kg";
-  const todayWk = state.workouts[today()];
+  const todayWk = state.workouts[date];
   const [draft, setDraft] = useState(() => {
     const init = {};
     exercises.forEach((ex) => {
@@ -142,7 +146,7 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
 
   function setF(exId, field, val) { setDraft((d) => ({ ...d, [exId]: { ...d[exId], [field]: val } })); }
   function copyLast(ex) {
-    const last = lastExerciseEntry(state, ex.id, today());
+    const last = lastExerciseEntry(state, ex.id, date);
     if (!last) return;
     setDraft((d) => ({ ...d, [ex.id]: { sets: str(last.sets), reps: str(last.reps), kg: last.kg != null ? str(Math.round(toUnit(last.kg, unit) * 2) / 2) : "", secs: str(last.secs) } }));
   }
@@ -160,13 +164,13 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
       if (ex.type === "hold") e.secs = secs;
       else { e.reps = reps; if (ex.type === "weighted") e.kg = kg; }
       entries[ex.id] = e;
-      const prevBest = exerciseBest(state, ex.id, ex.type, today());
+      const prevBest = exerciseBest(state, ex.id, ex.type, date);
       if (prevBest > 0 && workoutMetric(ex.type, e) > prevBest) prs.push(ex.name);
     });
     update((s) => {
-      if (Object.keys(entries).length === 0) { if (s.workouts[today()]) delete s.workouts[today()]; }
-      else s.workouts[today()] = { splitId, exercises: entries };
-      s.gym[today()] = splitId;
+      if (Object.keys(entries).length === 0) { if (s.workouts[date]) delete s.workouts[date]; }
+      else s.workouts[date] = { splitId, exercises: entries };
+      s.gym[date] = splitId;
       return s;
     });
     if (prs.length) celebrate("level", prs.length === 1 ? `New PR — ${prs[0]}!` : `${prs.length} new PRs!`);
@@ -176,7 +180,7 @@ function WorkoutDetails({ state, update, splitId, go, celebrate }) {
   return (
     <div className="card">
       {exercises.map((ex, i) => {
-        const last = lastExerciseEntry(state, ex.id, today());
+        const last = lastExerciseEntry(state, ex.id, date);
         const dr = draft[ex.id];
         return (
           <div key={ex.id} style={{ padding: "13px 0", borderTop: i === 0 ? "none" : "1px solid var(--line)" }}>

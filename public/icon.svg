@@ -1,5 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#15121d"/>
-  <rect x="96" y="96" width="320" height="320" rx="72" fill="#7C3AED"/>
-  <path d="M196 168h140v44h-96v52h84v44h-84v80h-44z" fill="#C6F432"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B35C9"/>
+      <stop offset="1" stop-color="#1B1326"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#g)"/>
+  <rect x="179" y="143" width="56" height="230" rx="10" fill="#ffffff"/>
+  <rect x="179" y="143" width="159" height="56" rx="10" fill="#ffffff"/>
+  <rect x="179" y="230" width="118" height="51" rx="10" fill="#ffffff"/>
+  <polygon points="410,97 353,179 384,179 364,246 430,159 394,159 425,97" fill="#C6F432"/>
 </svg>

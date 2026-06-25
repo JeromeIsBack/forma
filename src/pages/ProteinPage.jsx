@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Icon, CountUp } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
-import { today, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp } from "../lib/store.js";
+import { today, addDays, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp } from "../lib/store.js";
+import { DateNav } from "../components/DateNav.jsx";
 
 export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [search, setSearch] = useState("");
@@ -14,11 +15,12 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [customG, setCustomG] = useState("");
   const [savingPreset, setSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState("");
+  const [date, setDate] = useState(today());
 
   const target = proteinTarget(state.profile);
-  const total = Math.round(dayProtein(state, today()));
+  const total = Math.round(dayProtein(state, date));
   const pct = Math.min((total / target) * 100, 100);
-  const entry = state.protein[today()] || {};
+  const entry = state.protein[date] || {};
   const presets = state.presets || [];
   const hasToday = Object.keys(entry).length > 0;
 
@@ -31,9 +33,9 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   function setServings(id, servings) {
     const v = Math.max(0, Math.round(servings * 2) / 2);
     update((s) => {
-      if (!s.protein[today()]) s.protein[today()] = {};
-      if (v === 0) delete s.protein[today()][id]; else s.protein[today()][id] = v;
-      if (Object.keys(s.protein[today()]).length === 0) delete s.protein[today()];
+      if (!s.protein[date]) s.protein[date] = {};
+      if (v === 0) delete s.protein[date][id]; else s.protein[date][id] = v;
+      if (Object.keys(s.protein[date]).length === 0) delete s.protein[date];
       return s;
     });
   }
@@ -41,12 +43,12 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
     const current = entry[id] || 0;
     const wasUnder = total < target;
     setServings(id, current + delta);
-    const projected = Math.round(dayProtein({ ...state, protein: { ...state.protein, [today()]: { ...entry, [id]: Math.max(0, current + delta) } } }, today()));
+    const projected = Math.round(dayProtein({ ...state, protein: { ...state.protein, [date]: { ...entry, [id]: Math.max(0, current + delta) } } }, date));
     if (wasUnder && projected >= target) celebrate("win", "Protein target hit · +45 XP");
   }
   function addSuggestion(picks) {
     const wasUnder = total < target;
-    update((s) => { if (!s.protein[today()]) s.protein[today()] = {}; picks.forEach((p) => { s.protein[today()][p.id] = (s.protein[today()][p.id] || 0) + p.servings; }); return s; });
+    update((s) => { if (!s.protein[date]) s.protein[date] = {}; picks.forEach((p) => { s.protein[date][p.id] = (s.protein[date][p.id] || 0) + p.servings; }); return s; });
     celebrate("win", wasUnder ? "Gap closed · sources added" : "Sources added");
   }
   const customNow = entry._custom || 0;
@@ -54,12 +56,12 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
     if (customG === "" || isNaN(parseFloat(customG))) return;
     const g = clamp(parseFloat(customG), 1, 300);
     const wasUnder = total < target;
-    update((s) => { if (!s.protein[today()]) s.protein[today()] = {}; s.protein[today()]._custom = (s.protein[today()]._custom || 0) + g; return s; });
+    update((s) => { if (!s.protein[date]) s.protein[date] = {}; s.protein[date]._custom = (s.protein[date]._custom || 0) + g; return s; });
     setCustomG("");
     if (wasUnder && total + g >= target) celebrate("win", "Protein target hit · +45 XP");
   }
   function clearCustom() {
-    update((s) => { if (s.protein[today()]) { delete s.protein[today()]._custom; if (Object.keys(s.protein[today()]).length === 0) delete s.protein[today()]; } return s; });
+    update((s) => { if (s.protein[date]) { delete s.protein[date]._custom; if (Object.keys(s.protein[date]).length === 0) delete s.protein[date]; } return s; });
   }
   function presetTotal(pr) {
     let t = pr.customG || 0;
@@ -70,9 +72,9 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
     const wasUnder = total < target;
     const added = presetTotal(pr);
     update((s) => {
-      if (!s.protein[today()]) s.protein[today()] = {};
-      Object.entries(pr.items || {}).forEach(([id, serv]) => { s.protein[today()][id] = (s.protein[today()][id] || 0) + serv; });
-      if (pr.customG) s.protein[today()]._custom = (s.protein[today()]._custom || 0) + pr.customG;
+      if (!s.protein[date]) s.protein[date] = {};
+      Object.entries(pr.items || {}).forEach(([id, serv]) => { s.protein[date][id] = (s.protein[date][id] || 0) + serv; });
+      if (pr.customG) s.protein[date]._custom = (s.protein[date]._custom || 0) + pr.customG;
       return s;
     });
     celebrate("win", wasUnder && total + added >= target ? "Target hit · " + pr.name : pr.name + " logged");
@@ -90,7 +92,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
     update((s) => { const src = s.sources.find((x) => x.id === id); if (src) { if (field === "avg") src.avg = clamp(Math.round(parseFloat(value) || 0), 0, 300); else src[field] = value; } return s; });
   }
   function removeSource(id) {
-    update((s) => { s.sources = s.sources.filter((x) => x.id !== id); if (s.protein[today()]) delete s.protein[today()][id]; return s; });
+    update((s) => { s.sources = s.sources.filter((x) => x.id !== id); if (s.protein[date]) delete s.protein[date][id]; return s; });
   }
   function addSource() {
     const avg = parseFloat(draft.avg);
@@ -101,8 +103,10 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
 
   return (
     <div className="app">
-      <h2 className="sr-only">Protein tracker — log your sources, search, filter and edit them</h2>
-      <PageHead go={go} onMenu={onMenu} title="Protein" sub={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} />
+      <h2 className="sr-only">Protein tracker — log your sources for any day</h2>
+      <PageHead go={go} onMenu={onMenu} title="Protein" sub={date === today() ? "Today" : new Date(date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} />
+
+      <DateNav value={date} onChange={setDate} />
 
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff", background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
@@ -122,7 +126,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
       </div>
 
       {(() => {
-        const sug = suggestProtein(state);
+        const sug = suggestProtein(state, date);
         if (!sug || !sug.picks.length) return null;
         return (
           <div className="card glass" style={{ marginBottom: 4, padding: "14px 15px", border: "none" }}>
@@ -140,9 +144,9 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
         );
       })()}
 
-      <div className="section-label">One-off entry · today only</div>
+      <div className="section-label">One-off entry · this day</div>
       <div className="card">
-        <div style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 9, lineHeight: 1.4 }}>Ate something without a clear source? Add the grams just for today.</div>
+        <div style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 9, lineHeight: 1.4 }}>Ate something without a clear source? Add the grams just for this day.</div>
         <div style={{ display: "flex", gap: 9 }}>
           <input className="input" type="number" inputMode="numeric" min={1} max={300} placeholder="e.g. 24" value={customG} onChange={(e) => setCustomG(e.target.value)} />
           <button onClick={addCustom} style={{ padding: "0 20px", flexShrink: 0, borderRadius: "var(--r-md)", background: "var(--violet)", color: "#fff", fontFamily: "var(--display)", fontWeight: 600, fontSize: 14 }}>Add</button>
