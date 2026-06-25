@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "./ui.jsx";
+import { FormaWordmark } from "./BoltLogo.jsx";
 
 const ITEMS = [
   { id: "profile", label: "Character", icon: "user-bolt" },
@@ -53,7 +54,7 @@ export function NavDrawer({ open, onClose, go, current }) {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
-              <div className="logo">FORMA<span className="dot">.</span></div>
+              <FormaWordmark />
               <button onClick={onClose} aria-label="Close menu"
                 style={{ width: 36, height: 36, borderRadius: "var(--r-md)", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)" }}>
                 <Icon name="x" size={19} />

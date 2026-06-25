@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { CountUp, Ring, Icon } from "../components/ui.jsx";
 import { MenuButton } from "../components/NavDrawer.jsx";
-import { BoltLogo, FormaWordmark } from "../components/BoltLogo.jsx";
+import { FormaWordmark } from "../components/BoltLogo.jsx";
 import {
   today, weekKey, addDays, dayProtein, gymThisWeek, gymStreak,
   proteinTarget, levelFromXp, levelName, weeklyTarget, ACHIEVEMENTS, tierFor, measurementDue,
@@ -51,10 +51,7 @@ export default function Dashboard({ state, go, onMenu }) {
       <h2 className="sr-only">Forma dashboard</h2>
 
       <motion.div className="topbar sticky-head" {...fade(0)}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <BoltLogo size={30} />
-          <FormaWordmark />
-        </div>
+        <FormaWordmark />
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="daypill">{dateLabel}</div>
           <MenuButton onClick={onMenu} />
