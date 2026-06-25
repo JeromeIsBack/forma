@@ -92,6 +92,18 @@ export function freshState() {
     freezesEarned: 0,
     frozenWeeks: [],
     presets: [],
+    exercises: [
+      { id: "ex_dips", name: "Dips", type: "weighted", splitId: "push" },
+      { id: "ex_pushups", name: "Push-ups", type: "reps", splitId: "push" },
+      { id: "ex_lsit", name: "L-sit", type: "hold", splitId: "push" },
+      { id: "ex_pullups", name: "Pull-ups", type: "weighted", splitId: "pull" },
+      { id: "ex_rows", name: "Inverted rows", type: "reps", splitId: "pull" },
+      { id: "ex_hang", name: "Dead hang", type: "hold", splitId: "pull" },
+      { id: "ex_squats", name: "Squats", type: "weighted", splitId: "legs" },
+      { id: "ex_pistols", name: "Pistol squats", type: "reps", splitId: "legs" },
+      { id: "ex_calves", name: "Calf raises", type: "reps", splitId: "legs" },
+    ],
+    workouts: {},
     theme: "aurora",
     measurements: [],
     settings: { notifications: false, dismissed: {}, lastNotified: null },
@@ -112,6 +124,8 @@ function mergeDefaults(saved) {
   merged.freezesEarned = saved.freezesEarned || 0;
   merged.frozenWeeks = Array.isArray(saved.frozenWeeks) ? saved.frozenWeeks : [];
   merged.presets = Array.isArray(saved.presets) ? saved.presets : [];
+  merged.exercises = Array.isArray(saved.exercises) ? saved.exercises : base.exercises;
+  merged.workouts = saved.workouts && typeof saved.workouts === "object" ? saved.workouts : {};
   merged.theme = saved.theme || "aurora";
   merged.measurements = Array.isArray(saved.measurements) ? saved.measurements : [];
   merged.settings = { notifications: false, dismissed: {}, lastNotified: null, ...(saved.settings || {}) };
@@ -202,6 +216,48 @@ export function completedWeeks(state) {
   const counts = {};
   Object.keys(state.gym).forEach((d) => { const w = weekKey(d); counts[w] = (counts[w] || 0) + 1; });
   return Object.values(counts).filter((c) => c >= target).length;
+}
+
+export const EXERCISE_TYPES = [
+  { id: "reps", label: "Reps", hint: "bodyweight reps" },
+  { id: "weighted", label: "Weighted", hint: "reps + added kg" },
+  { id: "hold", label: "Hold", hint: "timed seconds" },
+];
+
+export function exercisesForSplit(state, splitId) {
+  return (state.exercises || []).filter((e) => e.splitId === splitId);
+}
+// The metric that defines a personal record for each exercise type.
+export function workoutMetric(type, entry) {
+  if (!entry) return 0;
+  if (type === "hold") return Number(entry.secs) || 0;
+  if (type === "weighted") return Number(entry.kg) || 0;
+  return Number(entry.reps) || 0;
+}
+export function exerciseBest(state, exId, type, beforeDate) {
+  let best = 0;
+  Object.entries(state.workouts || {}).forEach(([date, w]) => {
+    if (beforeDate && date >= beforeDate) return;
+    const e = w.exercises && w.exercises[exId];
+    if (e) { const m = workoutMetric(type, e); if (m > best) best = m; }
+  });
+  return best;
+}
+export function lastExerciseEntry(state, exId, beforeDate) {
+  let latest = null, latestDate = "";
+  Object.entries(state.workouts || {}).forEach(([date, w]) => {
+    if (beforeDate && date >= beforeDate) return;
+    const e = w.exercises && w.exercises[exId];
+    if (e && date > latestDate) { latestDate = date; latest = e; }
+  });
+  return latest;
+}
+export function summarizeEntry(type, e) {
+  if (!e) return "";
+  const sets = e.sets ? `${e.sets} × ` : "";
+  if (type === "hold") return `${sets}${e.secs || 0}s`;
+  if (type === "weighted") return `${sets}${e.reps || 0}${e.kg ? ` · +${e.kg}kg` : ""}`;
+  return `${sets}${e.reps || 0}`;
 }
 
 // Grants freezes (1 per 4 completed weeks, cap 5) and auto-protects the previous

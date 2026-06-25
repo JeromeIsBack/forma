@@ -155,37 +155,20 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
         )}
       </div>
 
-      <div className="section-label">Meal presets · one-tap</div>
-      <div className="card">
-        {presets.length === 0 && !savingPreset && (
-          <div style={{ fontSize: 12.5, color: "var(--text-2)", marginBottom: hasToday ? 12 : 0, lineHeight: 1.4 }}>Save a go-to combo (your usual breakfast, post-gym shake) and log it in one tap.</div>
-        )}
-        {presets.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+      {presets.length > 0 && (
+        <>
+          <div className="section-label">Meal presets · one-tap</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginBottom: 4 }}>
             {presets.map((pr) => (
-              <div key={pr.id} style={{ display: "flex", alignItems: "center", border: "1px solid var(--line)", borderRadius: 99, overflow: "hidden", background: "var(--paper)" }}>
-                <button onClick={() => logPreset(pr)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 5px 8px 13px", color: "var(--text)" }}>
-                  <Icon name="bolt" size={14} style={{ color: "var(--violet)" }} />
-                  <span style={{ fontSize: 12.5, fontWeight: 600 }}>{pr.name}</span>
-                  <span style={{ fontSize: 11, color: "var(--text-2)" }}>{presetTotal(pr)}g</span>
-                </button>
-                <button onClick={() => deletePreset(pr.id)} aria-label="Delete preset" style={{ padding: "8px 11px 8px 6px", color: "var(--text-3)" }}><Icon name="x" size={13} /></button>
-              </div>
+              <button key={pr.id} onClick={() => logPreset(pr)}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 15px", borderRadius: 99, background: "var(--violet)", color: "#fff", fontFamily: "var(--display)", fontWeight: 600, fontSize: 13 }}>
+                <Icon name="bolt" size={15} /> {pr.name}
+                <span style={{ fontSize: 11, opacity: 0.8 }}>{presetTotal(pr)}g</span>
+              </button>
             ))}
           </div>
-        )}
-        {savingPreset ? (
-          <div style={{ display: "flex", gap: 9 }}>
-            <input className="input" placeholder="Preset name" value={presetName} maxLength={28} onChange={(e) => setPresetName(e.target.value)} />
-            <button onClick={savePreset} style={{ padding: "0 18px", flexShrink: 0, borderRadius: "var(--r-md)", background: "var(--violet)", color: "#fff", fontFamily: "var(--display)", fontWeight: 600, fontSize: 14 }}>Save</button>
-            <button onClick={() => { setSavingPreset(false); setPresetName(""); }} aria-label="Cancel" style={{ padding: "0 13px", border: "1px solid var(--line-2)", borderRadius: "var(--r-md)", color: "var(--text-2)" }}><Icon name="x" size={15} /></button>
-          </div>
-        ) : hasToday ? (
-          <button onClick={() => setSavingPreset(true)} style={{ width: "100%", padding: 11, border: "1px dashed var(--line-2)", borderRadius: "var(--r-md)", color: "var(--text-2)", fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-            <Icon name="bookmark-plus" size={15} /> Save today's log as a preset
-          </button>
-        ) : null}
-      </div>
+        </>
+      )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 2px 12px" }}>
         <span style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 12, letterSpacing: "0.04em", color: "var(--text-2)" }}>Your sources</span>
