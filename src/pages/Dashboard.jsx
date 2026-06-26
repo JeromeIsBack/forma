@@ -83,11 +83,16 @@ export default function Dashboard({ state, go, onMenu }) {
           </div>
           <div style={{ fontSize: 12, color: "#b9aedc" }}>{state.xp.toLocaleString()} XP</div>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
-          <CountUp value={protein} className="num" style={{ fontSize: 52, background: "linear-gradient(95deg,#C6F432,#5DE0C4)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }} />
-          <span className="num" style={{ fontSize: 20, color: "#8a7fb0", paddingBottom: 4 }}>/{target}g</span>
-        </div>
-        <div style={{ fontSize: 12.5, color: "#b9aedc", marginTop: 6 }}>{protein >= target ? "protein crushed today" : `${target - protein}g protein to go`}</div>
+        <button onClick={() => go("protein")} style={{ display: "block", width: "100%", textAlign: "left" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
+            <CountUp value={protein} className="num" style={{ fontSize: 52, background: "linear-gradient(95deg,#C6F432,#5DE0C4)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }} />
+            <span className="num" style={{ fontSize: 20, color: "#8a7fb0", paddingBottom: 4 }}>/{target}g</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#b9aedc", marginTop: 6 }}>
+            {protein >= target ? "protein crushed today" : `${target - protein}g protein to go`}
+            <Icon name="chevron-right" size={14} style={{ color: "#8a7fb0" }} />
+          </div>
+        </button>
         <div style={{ height: 8, background: "#2e2740", borderRadius: 99, marginTop: 16, overflow: "hidden" }}>
           <motion.div initial={{ width: 0 }} animate={{ width: `${xpPct}%` }} transition={{ duration: 1.1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
             style={{ height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#C6F432,#5DE0C4)" }} />

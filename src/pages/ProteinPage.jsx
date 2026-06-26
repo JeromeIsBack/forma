@@ -5,6 +5,7 @@ import { PageHead } from "./GymPage.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
 import { today, addDays, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp } from "../lib/store.js";
 import { DateNav } from "../components/DateNav.jsx";
+import { QuickAddSource } from "../components/QuickAddSource.jsx";
 
 export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [search, setSearch] = useState("");
@@ -230,6 +231,9 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
             </div>
           );
         })}
+        {q && !editing && (
+          <QuickAddSource query={search} update={update} onAdded={(newId) => { update((s) => { if (!s.protein[date]) s.protein[date] = {}; s.protein[date][newId] = (s.protein[date][newId] || 0) + 1; return s; }); setSearch(""); }} />
+        )}
       </div>
 
       {adding ? (

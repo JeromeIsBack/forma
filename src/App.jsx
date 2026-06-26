@@ -81,7 +81,23 @@ export default function App() {
     );
   }
 
-  const go = (v) => setView(v);
+  const navStack = useRef([]);
+  const go = (v) => { if (v !== view) { navStack.current.push(view); setView(v); } };
+  const back = () => {
+    const st = navStack.current;
+    if (st.length) setView(st.pop());
+    else if (view !== "dashboard") setView("dashboard");
+  };
+  const touchRef = useRef(null);
+  function onTouchStart(e) { if (menuOpen) return; const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY, time: Date.now() }; }
+  function onTouchEnd(e) {
+    const st = touchRef.current; touchRef.current = null;
+    if (!st) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - st.x, dy = t.clientY - st.y, dt = Date.now() - st.time;
+    // left-edge swipe to the right => go back to the previous page
+    if (st.x <= 36 && dx > 70 && Math.abs(dy) < 50 && dt < 600) back();
+  }
   const onMenu = () => setMenuOpen(true);
 
   const pages = {
@@ -100,6 +116,7 @@ export default function App() {
 
   return (
     <>
+      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <AnimatePresence mode="wait">
         <motion.div key={view}
           initial={{ opacity: 0, x: isHub ? -14 : 14 }}
@@ -109,6 +126,7 @@ export default function App() {
           {pages[view]}
         </motion.div>
       </AnimatePresence>
+      </div>
 
       <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} go={go} current={view} />
       <BottomNav current={view} go={go} />

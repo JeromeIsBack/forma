@@ -142,9 +142,11 @@ function dayIndex() {
 }
 
 // Returns one rotating tip for a goal + context.
-export function rotatingTip(goalId, context) {
+function hourIndex() { return Math.floor(Date.now() / 3600000); }
+
+export function rotatingTip(goalId, context, offset = 0) {
   const g = goalGuide(goalId);
   const pool = (g.tips && g.tips[context]) || [];
   if (!pool.length) return null;
-  return pool[dayIndex() % pool.length];
+  return pool[((hourIndex() + offset) % pool.length + pool.length) % pool.length];
 }

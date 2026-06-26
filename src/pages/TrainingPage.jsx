@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
+import { QuickAddSource } from "../components/QuickAddSource.jsx";
 import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, EXERCISE_LIBRARY, exercisesForSplit, exerciseHasData } from "../lib/store.js";
 
 export default function TrainingPage({ state, update, go, onMenu }) {
@@ -243,6 +244,12 @@ function PresetBuilder({ state, update }) {
                 <span style={{ fontSize: 11, color: "var(--text-2)" }}>{src.avg}g · {src.type}</span>
               </button>
             ))}
+          </div>
+        )}
+
+        {q && (
+          <div style={{ marginBottom: 12 }}>
+            <QuickAddSource query={search} update={update} onAdded={(id) => { bump(id, 1); setSearch(""); }} />
           </div>
         )}
 

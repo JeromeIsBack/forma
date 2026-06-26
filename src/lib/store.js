@@ -404,27 +404,50 @@ export function perfectDays(state) {
 export function suggestProtein(state, date = today()) {
   const target = proteinTarget(state.profile);
   const have = dayProtein(state, date);
-  const gap = target - have;
+  let gap = target - have;
   if (gap <= 0) return null;
-  const sources = [...state.sources].filter((s) => s.avg > 0).sort((a, b) => b.avg - a.avg);
-  if (!sources.length) return null;
-  let remaining = gap;
+
+  // Candidate pool: real contributors (>= 6g/serving). Fall back to anything if needed.
+  let pool = [...state.sources].filter((s) => s.avg >= 6);
+  if (!pool.length) pool = [...state.sources].filter((s) => s.avg > 0);
+  if (!pool.length) return null;
+
+  // Favour variety: one strong source per type first (biggest first), then the rest as fillers.
+  const byType = {};
+  for (const s of [...pool].sort((a, b) => b.avg - a.avg)) { if (!byType[s.type]) byType[s.type] = s; }
+  let ordered = Object.values(byType).sort((a, b) => b.avg - a.avg);
+  const chosen = new Set(ordered.map((s) => s.id));
+  ordered = ordered.concat([...pool].filter((s) => !chosen.has(s.id)).sort((a, b) => b.avg - a.avg));
+
+  // Round-robin: add one serving at a time across different foods, so no single item piles up.
+  // Caps keep it realistic for a day: <= 2 servings per food, <= 4 distinct foods.
+  const MAX_SERV = 2, MAX_ITEMS = 4, TOL = 7;
   const picks = [];
-  for (const src of sources) {
-    if (remaining <= 5 || picks.length >= 3) break;
-    let n = Math.min(Math.floor(remaining / src.avg), 3);
-    if (n > 0) { picks.push({ id: src.id, name: src.name, servings: n, grams: n * src.avg }); remaining -= n * src.avg; }
+  let progressed = true;
+  while (gap > TOL && progressed) {
+    progressed = false;
+    for (const src of ordered) {
+      if (gap <= TOL) break;
+      let p = picks.find((x) => x.id === src.id);
+      if (p && p.servings >= MAX_SERV) continue;
+      if (!p && picks.length >= MAX_ITEMS) continue;
+      // don't massively overshoot on the very last little bit
+      if (src.avg > gap + 14 && picks.length > 0 && gap < 18) continue;
+      if (!p) { p = { id: src.id, name: src.name, servings: 0, grams: 0, avg: src.avg }; picks.push(p); }
+      p.servings += 1; p.grams += src.avg; gap -= src.avg; progressed = true;
+    }
   }
-  if (remaining > 5) {
-    const asc = [...sources].sort((a, b) => a.avg - b.avg);
-    const fit = asc.find((s) => s.avg >= remaining) || sources[0];
-    const existing = picks.find((p) => p.id === fit.id);
-    if (existing) { existing.servings += 1; existing.grams += fit.avg; }
-    else picks.push({ id: fit.id, name: fit.name, servings: 1, grams: fit.avg });
-    remaining -= fit.avg;
+
+  // If we couldn't get close (e.g. only tiny sources, all capped), top up the best remaining food once.
+  if (gap > TOL && picks.length) {
+    const best = ordered[0];
+    const p = picks.find((x) => x.id === best.id) || (picks.push({ id: best.id, name: best.name, servings: 0, grams: 0, avg: best.avg }), picks[picks.length - 1]);
+    p.servings += 1; p.grams += best.avg; gap -= best.avg;
   }
+
   const added = picks.reduce((s, p) => s + p.grams, 0);
-  return { picks, added, gap, after: Math.round(have + added) };
+  if (!picks.length) return null;
+  return { picks, added, gap: target - have, after: Math.round(have + added) };
 }
 
 // ---- Tiered, lore-themed achievements (with reset baseline) ----

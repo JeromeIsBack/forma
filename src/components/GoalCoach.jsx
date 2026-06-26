@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "./ui.jsx";
 import { goalGuide, rotatingTip } from "../data/goals.js";
 
@@ -6,17 +6,27 @@ import { goalGuide, rotatingTip } from "../data/goals.js";
 // note: optional situational string computed live from the user's progress
 export function GoalCoach({ goal, context, note }) {
   const g = goalGuide(goal);
-  const tip = rotatingTip(goal, context);
+  const [bump, setBump] = useState(0);
+  const [, setTick] = useState(0);
   const [open, setOpen] = useState(false);
+  // re-render periodically so the hourly rotation refreshes on its own
+  useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 60000); return () => clearInterval(id); }, []);
+  const tip = rotatingTip(goal, context, bump);
   if (!tip) return null;
 
   return (
     <div className="card" style={{ padding: "15px 16px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 11 }}>
-        <span style={{ width: 6, height: 6, borderRadius: 99, background: g.color, flexShrink: 0 }} />
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-3)", textTransform: "uppercase" }}>
-          Game plan · {g.label}
-        </span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 11 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{ width: 6, height: 6, borderRadius: 99, background: g.color, flexShrink: 0 }} />
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-3)", textTransform: "uppercase" }}>
+            Game plan · {g.label}
+          </span>
+        </div>
+        <button onClick={() => { setBump((b) => b + 1); setOpen(false); }} aria-label="Next tip"
+          style={{ width: 26, height: 26, marginRight: -4, color: "var(--text-3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="refresh" size={14} />
+        </button>
       </div>
 
       <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14.5, lineHeight: 1.4, color: "var(--text)" }}>
