@@ -97,7 +97,7 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
         {logged.map((d) => {
           const sp = splits.find((x) => x.id === state.gym[d]);
           const w = state.workouts[d];
-          const count = w && w.exercises ? Object.keys(w.exercises).length : 0;
+          const count = w && w.exercises && w.splitId === state.gym[d] ? Object.keys(w.exercises).length : 0;
           return (
             <div key={d} className="row">
               <span style={{ fontSize: 13, color: "var(--text-2)" }}>{new Date(d + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long" })}</span>
@@ -164,7 +164,7 @@ function WorkoutDetails({ state, update, splitId, date, go, celebrate }) {
       if (prevBest > 0 && workoutMetric(ex.type, e) > prevBest) prs.push(ex.name);
     });
     update((s) => {
-      if (Object.keys(entries).length === 0) { if (s.workouts[date]) delete s.workouts[date]; }
+      if (Object.keys(entries).length === 0) { if (s.workouts[date] && s.workouts[date].splitId === splitId) delete s.workouts[date]; }
       else s.workouts[date] = { splitId, exercises: entries };
       s.gym[date] = splitId;
       return s;
