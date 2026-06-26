@@ -121,10 +121,12 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
         <div style={{ fontSize: 11.5, color: "#cabff0", marginTop: 9 }}>{total >= target ? "Target reached — strong day." : `${target - total}g to go`}</div>
       </div>
 
-      <div style={{ marginBottom: 4 }}>
-        <GoalCoach goal={state.profile.goal} context="protein"
-          note={total >= target ? "Target smashed. A pre-sleep skyr or casein serving aids overnight recovery." : `${target - total}g to go — a whey scoop is ~25g, 100g chicken ~30g.`} />
-      </div>
+      {state.settings.showTips !== false && (
+        <div style={{ marginBottom: 4 }}>
+          <GoalCoach goal={state.profile.goal} context="protein"
+            note={total >= target ? "Target smashed. A pre-sleep skyr or casein serving aids overnight recovery." : `${target - total}g to go — a whey scoop is ~25g, 100g chicken ~30g.`} />
+        </div>
+      )}
 
       {(() => {
         const sug = suggestProtein(state, date);

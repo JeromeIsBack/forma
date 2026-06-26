@@ -38,6 +38,8 @@ export default function SettingsPage({ state, update, replace, go, onMenu, celeb
   }
 
   const notifOn = state.settings.notifications;
+  const tipsOn = state.settings.showTips !== false;
+  function toggleTips() { update((s) => { const on = s.settings.showTips !== false; s.settings.showTips = !on; return s; }); }
 
   return (
     <div className="app">
@@ -86,6 +88,22 @@ export default function SettingsPage({ state, update, replace, go, onMenu, celeb
         {perm === "denied"
           ? "Notifications are blocked in your browser settings — enable them there first."
           : "Reminders fire when you open Forma and a check-in is due. Always-on scheduled push (when the app is closed) needs a server and isn't enabled yet."}
+      </div>
+
+      <div className="section-label">Coaching</div>
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <button onClick={toggleTips} style={{ display: "flex", alignItems: "center", gap: 13, padding: 15, width: "100%", textAlign: "left" }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--violet-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Icon name="bulb" size={20} style={{ color: "var(--violet)" }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14 }}>Game plan tips</div>
+            <div style={{ fontSize: 11.5, color: "var(--text-2)", marginTop: 2 }}>Show coaching tips on the Gym and Protein pages.</div>
+          </div>
+          <div style={{ width: 46, height: 28, borderRadius: 99, background: tipsOn ? "var(--violet)" : "var(--line-2)", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+            <span style={{ position: "absolute", top: 3, left: tipsOn ? 21 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+          </div>
+        </button>
       </div>
 
       <div className="section-label">Your data</div>

@@ -59,7 +59,7 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
         </div>
       </div>
 
-      <GoalCoach goal={state.profile.goal} context="training" note={gymNote} />
+      {state.settings.showTips !== false && <GoalCoach goal={state.profile.goal} context="training" note={gymNote} />}
 
       <div style={{ marginTop: 18 }}><DateNav value={date} onChange={setDate} /></div>
 

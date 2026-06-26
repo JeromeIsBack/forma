@@ -169,7 +169,7 @@ function mergeDefaults(saved) {
   merged.workouts = saved.workouts && typeof saved.workouts === "object" ? saved.workouts : {};
   merged.theme = saved.theme || "aurora";
   merged.measurements = Array.isArray(saved.measurements) ? saved.measurements : [];
-  merged.settings = { notifications: false, dismissed: {}, lastNotified: null, unit: "kg", ...(saved.settings || {}) };
+  merged.settings = { notifications: false, dismissed: {}, lastNotified: null, unit: "kg", showTips: true, ...(saved.settings || {}) };
   if (!Array.isArray(merged.weightLog) || !merged.weightLog.length) {
     merged.weightLog = [{ date: today(), kg: merged.profile.weight || 80 }];
   }

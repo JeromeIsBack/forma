@@ -6,8 +6,6 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="120" fill="url(#g)"/>
-  <rect x="179" y="143" width="56" height="230" rx="10" fill="#ffffff"/>
-  <rect x="179" y="143" width="159" height="56" rx="10" fill="#ffffff"/>
-  <rect x="179" y="230" width="118" height="51" rx="10" fill="#ffffff"/>
+  <path d="M337.1 136L337.1 198.4L194.4 198.4L194.4 232L331 232L331 294.4L194.4 294.4L194.4 376L119.8 376L119.8 136Z" fill="#ffffff"/>
   <polygon points="410,97 353,179 384,179 364,246 430,159 394,159 425,97" fill="#C6F432"/>
 </svg>
