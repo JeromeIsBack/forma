@@ -110,6 +110,47 @@ export function freshState() {
   };
 }
 
+export function uid(prefix = "id") {
+  return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+export function presetContents(state, preset) {
+  const parts = [];
+  Object.entries((preset && preset.items) || {}).forEach(([id, serv]) => {
+    const src = (state.sources || []).find((x) => x.id === id);
+    if (src) parts.push((serv % 1 === 0 ? serv : serv.toFixed(1)) + "\u00d7 " + src.name);
+  });
+  if (preset && preset.customG) parts.push("+" + Math.round(preset.customG) + "g");
+  return parts;
+}
+
+// Repairs state where ids collided (older builds generated ids from Date.now() alone,
+// so two items created in the same millisecond shared an id). A shared exercise id makes
+// one exercise inherit another's workout data -> phantom "locked" type and cross-split mixups.
+function ensureUniqueIds(state) {
+  const seenSplits = new Set();
+  ((state.routine && state.routine.splits) || []).forEach((sp) => {
+    if (seenSplits.has(sp.id)) sp.id = uid("s");
+    seenSplits.add(sp.id);
+  });
+  const seenEx = new Set();
+  (state.exercises || []).forEach((ex) => {
+    if (seenEx.has(ex.id)) ex.id = uid("ex");
+    seenEx.add(ex.id);
+  });
+  const seenSrc = new Set();
+  (state.sources || []).forEach((src) => {
+    if (seenSrc.has(src.id)) src.id = uid("c");
+    seenSrc.add(src.id);
+  });
+  const seenPr = new Set();
+  (state.presets || []).forEach((pr) => {
+    if (seenPr.has(pr.id)) pr.id = uid("pr");
+    seenPr.add(pr.id);
+  });
+  return state;
+}
+
 function mergeDefaults(saved) {
   const base = freshState();
   const merged = { ...base, ...saved };
@@ -132,7 +173,7 @@ function mergeDefaults(saved) {
   if (!Array.isArray(merged.weightLog) || !merged.weightLog.length) {
     merged.weightLog = [{ date: today(), kg: merged.profile.weight || 80 }];
   }
-  return merged;
+  return ensureUniqueIds(merged);
 }
 
 export function getSplits(state) {

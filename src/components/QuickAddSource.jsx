@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "./ui.jsx";
-import { SOURCE_TYPES, clamp } from "../lib/store.js";
+import { SOURCE_TYPES, clamp, uid } from "../lib/store.js";
 
 // Inline "add a brand-new protein source" that saves into the overall source list,
 // usable from any source search. onAdded(id) fires after it's saved so the caller
@@ -13,7 +13,7 @@ export function QuickAddSource({ query, update, onAdded }) {
   function save() {
     const avg = parseFloat(d.avg);
     if (!d.name.trim() || !avg) return;
-    const id = "c" + Date.now();
+    const id = uid("c");
     update((s) => { if (!s.sources) s.sources = []; s.sources.push({ id, name: d.name.trim(), avg: clamp(Math.round(avg), 1, 300), unit: d.unit.trim() || "serving", type: d.type }); return s; });
     setOpen(false); setD({ name: "", avg: "", unit: "serving", type: "Other" });
     if (onAdded) onAdded(id);

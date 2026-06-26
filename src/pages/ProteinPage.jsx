@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Icon, CountUp } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
-import { today, addDays, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp } from "../lib/store.js";
+import { today, addDays, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp, presetContents, uid } from "../lib/store.js";
 import { DateNav } from "../components/DateNav.jsx";
 import { QuickAddSource } from "../components/QuickAddSource.jsx";
 
@@ -85,7 +85,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
     const items = {}; let customG = 0;
     Object.entries(entry).forEach(([id, v]) => { if (id === "_custom") customG = v; else items[id] = v; });
     if (!Object.keys(items).length && !customG) return;
-    update((s) => { if (!s.presets) s.presets = []; s.presets.push({ id: "pr" + Date.now(), name: presetName.trim(), items, customG }); return s; });
+    update((s) => { if (!s.presets) s.presets = []; s.presets.push({ id: uid("pr"), name: presetName.trim(), items, customG }); return s; });
     setPresetName(""); setSavingPreset(false);
   }
   function deletePreset(id) { update((s) => { s.presets = (s.presets || []).filter((p) => p.id !== id); return s; }); }
@@ -98,7 +98,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   function addSource() {
     const avg = parseFloat(draft.avg);
     if (!draft.name.trim() || !avg) return;
-    update((s) => { s.sources.push({ id: "c" + Date.now(), name: draft.name.trim(), avg: clamp(Math.round(avg), 1, 300), unit: draft.unit.trim() || "serving", type: draft.type }); return s; });
+    update((s) => { s.sources.push({ id: uid("c"), name: draft.name.trim(), avg: clamp(Math.round(avg), 1, 300), unit: draft.unit.trim() || "serving", type: draft.type }); return s; });
     setDraft({ name: "", avg: "", unit: "", type: "Meat" }); setAdding(false);
   }
 
@@ -164,13 +164,19 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
         <>
           <div className="section-label">Meal presets · one-tap</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginBottom: 4 }}>
-            {presets.map((pr) => (
-              <button key={pr.id} onClick={() => logPreset(pr)}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 15px", borderRadius: 99, background: "var(--violet)", color: "#fff", fontFamily: "var(--display)", fontWeight: 600, fontSize: 13 }}>
-                <Icon name="bolt" size={15} /> {pr.name}
-                <span style={{ fontSize: 11, opacity: 0.8 }}>{presetTotal(pr)}g</span>
-              </button>
-            ))}
+            {presets.map((pr) => {
+              const contents = presetContents(state, pr).join(" · ");
+              return (
+                <button key={pr.id} onClick={() => logPreset(pr)}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, padding: "9px 15px", borderRadius: 16, background: "var(--violet)", color: "#fff", fontFamily: "var(--display)", maxWidth: "100%" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 13 }}>
+                    <Icon name="bolt" size={14} /> {pr.name}
+                    <span style={{ fontSize: 11, opacity: 0.8 }}>{presetTotal(pr)}g</span>
+                  </span>
+                  {contents && <span style={{ fontSize: 10.5, opacity: 0.72, fontFamily: "var(--sans)", fontWeight: 500, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{contents}</span>}
+                </button>
+              );
+            })}
           </div>
         </>
       )}

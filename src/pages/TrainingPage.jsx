@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { QuickAddSource } from "../components/QuickAddSource.jsx";
-import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, EXERCISE_LIBRARY, exercisesForSplit, exerciseHasData } from "../lib/store.js";
+import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, EXERCISE_LIBRARY, exercisesForSplit, exerciseHasData, presetContents, uid } from "../lib/store.js";
 
 export default function TrainingPage({ state, update, go, onMenu }) {
   const splits = getSplits(state);
@@ -14,7 +14,7 @@ export default function TrainingPage({ state, update, go, onMenu }) {
 
   function setSplitLabel(id, label) { update((s) => { const sp = s.routine.splits.find((x) => x.id === id); if (sp) sp.label = label; return s; }); }
   function removeSplit(id) { update((s) => { if (s.routine.splits.length <= 1) return s; s.routine.splits = s.routine.splits.filter((x) => x.id !== id); s.exercises = (s.exercises || []).filter((e) => e.splitId !== id); return s; }); }
-  function addSplit() { update((s) => { const color = SPLIT_PALETTE[s.routine.splits.length % SPLIT_PALETTE.length]; s.routine.splits.push({ id: "s" + Date.now(), label: "New split", color }); return s; }); }
+  function addSplit() { update((s) => { const color = SPLIT_PALETTE[s.routine.splits.length % SPLIT_PALETTE.length]; s.routine.splits.push({ id: uid("s"), label: "New split", color }); return s; }); }
   function setTarget(n) { update((s) => { s.routine.weeklyTarget = clamp(n, 1, 7); return s; }); }
 
   function exFields(id) { return exDraft[id] || { name: "", type: "reps" }; }
@@ -22,11 +22,11 @@ export default function TrainingPage({ state, update, go, onMenu }) {
   function addExercise(splitId) {
     const f = exFields(splitId);
     if (!f.name.trim()) return;
-    update((s) => { if (!s.exercises) s.exercises = []; s.exercises.push({ id: "ex" + Date.now(), name: f.name.trim(), type: f.type, splitId }); return s; });
+    update((s) => { if (!s.exercises) s.exercises = []; s.exercises.push({ id: uid("ex"), name: f.name.trim(), type: f.type, splitId }); return s; });
     setExDraft((d) => ({ ...d, [splitId]: { name: "", type: f.type } }));
   }
   function addLibraryExercise(splitId, item) {
-    update((s) => { if (!s.exercises) s.exercises = []; s.exercises.push({ id: "ex" + Date.now(), name: item.name, type: item.type, splitId }); return s; });
+    update((s) => { if (!s.exercises) s.exercises = []; s.exercises.push({ id: uid("ex"), name: item.name, type: item.type, splitId }); return s; });
     setExDraft((d) => ({ ...d, [splitId]: { name: "", type: item.type } }));
   }
   function renameExercise(id, name) { update((s) => { const e = s.exercises.find((x) => x.id === id); if (e) e.name = name; return s; }); }
@@ -111,6 +111,11 @@ export default function TrainingPage({ state, update, go, onMenu }) {
                             </>
                           )}
                         </div>
+                        {editing && locked && (
+                          <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 7, paddingLeft: 2, lineHeight: 1.4 }}>
+                            Type is locked — you've already logged sets for this exercise. Rename is still fine.
+                          </div>
+                        )}
                         {removing && (
                           <div style={{ display: "flex", gap: 8, padding: "0 6px 9px" }}>
                             <button onClick={() => archiveExercise(ex.id)} style={{ flex: 1, padding: "9px 0", borderRadius: "var(--r-md)", border: "1px solid var(--line-2)", color: "var(--text)", fontSize: 12, fontWeight: 600 }}>Archive · keep history</button>
@@ -187,7 +192,7 @@ function PresetBuilder({ state, update }) {
   function itemsTotal(obj) { let t = 0; Object.entries(obj).forEach(([id, serv]) => { const src = state.sources.find((x) => x.id === id); if (src) t += src.avg * serv; }); return Math.round(t); }
   function save() {
     if (!name.trim() || Object.keys(items).length === 0) return;
-    update((s) => { if (!s.presets) s.presets = []; s.presets.push({ id: "pr" + Date.now(), name: name.trim(), items, customG: 0 }); return s; });
+    update((s) => { if (!s.presets) s.presets = []; s.presets.push({ id: uid("pr"), name: name.trim(), items, customG: 0 }); return s; });
     setName(""); setSearch(""); setItems({});
   }
   function del(id) { update((s) => { s.presets = (s.presets || []).filter((p) => p.id !== id); return s; }); }
@@ -203,7 +208,7 @@ function PresetBuilder({ state, update }) {
             <div key={pr.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--line)" }}>
               <div>
                 <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 13.5 }}>{pr.name}</div>
-                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>{itemsTotal(pr.items || {}) + (pr.customG || 0)}g · {Object.keys(pr.items || {}).length} sources</div>
+                <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 230 }}>{(itemsTotal(pr.items || {}) + (pr.customG || 0))}g · {presetContents(state, pr).join(" · ") || "empty"}</div>
               </div>
               <button onClick={() => del(pr.id)} aria-label="Delete preset" style={{ width: 34, height: 34, borderRadius: "var(--r-md)", border: "1px solid var(--line)", color: "var(--coral)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="trash" size={15} /></button>
             </div>
