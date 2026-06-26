@@ -26,6 +26,8 @@ export default function App() {
   const toastTimer = useRef();
   const reminded = useRef(false);
   const freezeChecked = useRef(false);
+  const navStack = useRef([]);
+  const touchRef = useRef(null);
 
   function showToast(kind, text) {
     clearTimeout(toastTimer.current);
@@ -81,14 +83,12 @@ export default function App() {
     );
   }
 
-  const navStack = useRef([]);
   const go = (v) => { if (v !== view) { navStack.current.push(view); setView(v); } };
   const back = () => {
     const st = navStack.current;
     if (st.length) setView(st.pop());
     else if (view !== "dashboard") setView("dashboard");
   };
-  const touchRef = useRef(null);
   function onTouchStart(e) { if (menuOpen) return; const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY, time: Date.now() }; }
   function onTouchEnd(e) {
     const st = touchRef.current; touchRef.current = null;
