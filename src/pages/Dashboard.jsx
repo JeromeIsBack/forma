@@ -102,7 +102,7 @@ export default function Dashboard({ state, go, onMenu }) {
 
       <motion.div {...fade(3)} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: 14 }}>
         <Tile onClick={() => go("gym")} bg="var(--violet)" icon="barbell" label="Gym" big={`${sessions}/${wt}`} hint="this week" />
-        <Tile onClick={() => go("progress")} bg="var(--coral)" icon="flame" label="Streak" big={String(streak)} hint={streak === 1 ? "week alive" : "weeks alive"} badge={state.freezes > 0 ? state.freezes : null} />
+        <Tile onClick={() => go("progress")} bg="var(--accent)" icon="flame" label="Streak" big={String(streak)} hint={streak === 1 ? "week alive" : "weeks alive"} badge={state.freezes > 0 ? state.freezes : null} />
       </motion.div>
 
       <motion.div {...fade(4)} className="card" style={{ marginBottom: 14 }}>

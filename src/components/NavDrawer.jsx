@@ -3,12 +3,15 @@ import { Icon, Ring } from "./ui.jsx";
 import { FormaWordmark } from "./BoltLogo.jsx";
 import { levelFromXp, levelName } from "../lib/store.js";
 
+// Colors are theme tokens, so the drawer re-tints when the theme changes.
 const ITEMS = [
-  { id: "profile", label: "Character", sub: "Stats, goal & measurements", icon: "user-bolt", color: "#A78BFA" },
-  { id: "dojo", label: "The Dojo", sub: "Build splits & meal presets", icon: "karate", color: "#C6F432" },
-  { id: "history", label: "History", sub: "Your full training log", icon: "calendar-stats", color: "#5DE0C4" },
-  { id: "settings", label: "Settings", sub: "Themes, units & data", icon: "settings", color: "#FFC53D" },
+  { id: "profile", label: "Character", sub: "Stats, goal & measurements", icon: "user-bolt", color: "var(--violet)" },
+  { id: "dojo", label: "The Dojo", sub: "Build splits & meal presets", icon: "karate", color: "var(--lime)" },
+  { id: "history", label: "History", sub: "Your full training log", icon: "calendar-stats", color: "var(--mint)" },
+  { id: "settings", label: "Settings", sub: "Themes, units & data", icon: "settings", color: "var(--accent)" },
 ];
+
+const tint = (c, pct) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
 
 export function MenuButton({ onClick, dark }) {
   return (
@@ -49,15 +52,15 @@ export function NavDrawer({ open, onClose, go, current, state }) {
             style={{
               position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 101,
               width: "84%", maxWidth: 322,
-              background: "linear-gradient(165deg, #2c1a63 0%, #1a1330 56%, #110d1b 100%)",
+              background: "linear-gradient(165deg, var(--hero-1) 0%, var(--hero-2) 100%)",
               borderLeft: "1px solid rgba(255,255,255,0.08)",
               boxShadow: "-22px 0 64px rgba(0,0,0,0.55)",
               padding: "calc(20px + env(safe-area-inset-top)) 16px 18px",
               display: "flex", flexDirection: "column", overflow: "hidden",
             }}
           >
-            <div style={{ position: "absolute", top: -90, right: -70, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(124,58,237,0.5), transparent 70%)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -70, left: -70, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle, rgba(198,244,50,0.12), transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: -90, right: -70, width: 240, height: 240, borderRadius: "50%", background: `radial-gradient(circle, ${tint("var(--violet)", 55)}, transparent 70%)`, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -70, left: -70, width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${tint("var(--accent)", 22)}, transparent 70%)`, pointerEvents: "none" }} />
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, position: "relative" }}>
               <FormaWordmark style={{ color: "#fff" }} />
@@ -72,13 +75,13 @@ export function NavDrawer({ open, onClose, go, current, state }) {
               onClick={() => { go("profile"); onClose(); }}
               style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, padding: 14, borderRadius: 18, width: "100%", textAlign: "left", marginBottom: 18,
                 background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(8px)" }}>
-              <Ring value={lv.into} max={lv.need} size={58} stroke={6} track="rgba(255,255,255,0.14)" color="#C6F432">
+              <Ring value={lv.into} max={lv.need} size={58} stroke={6} track="rgba(255,255,255,0.14)" color="var(--lime)">
                 <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 19, color: "#fff" }}>{lv.level}</div>
               </Ring>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 9.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Level {lv.level}</div>
                 <div style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 17, color: "#fff", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
-                <div style={{ fontSize: 11, color: "#C6F432", marginTop: 3 }}>{toNext} XP to level {lv.level + 1}</div>
+                <div style={{ fontSize: 11, color: "var(--lime)", marginTop: 3 }}>{toNext} XP to level {lv.level + 1}</div>
               </div>
               <Icon name="chevron-right" size={18} style={{ color: "rgba(255,255,255,0.4)" }} />
             </motion.button>
@@ -96,9 +99,9 @@ export function NavDrawer({ open, onClose, go, current, state }) {
                       display: "flex", alignItems: "center", gap: 13, padding: "12px 13px", borderRadius: 16, width: "100%", textAlign: "left",
                       background: active ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.045)",
                       border: active ? `1px solid ${it.color}` : "1px solid rgba(255,255,255,0.07)",
-                      boxShadow: active ? `0 0 24px ${it.color}3a` : "none",
+                      boxShadow: active ? `0 0 24px ${tint(it.color, 36)}` : "none",
                     }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `${it.color}22`, border: `1px solid ${it.color}44` }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: tint(it.color, 20), border: `1px solid ${tint(it.color, 42)}` }}>
                       <Icon name={it.icon} size={19} style={{ color: it.color }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
