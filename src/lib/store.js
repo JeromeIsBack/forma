@@ -294,13 +294,20 @@ export const EXERCISE_LIBRARY = [
 export function exercisesForSplit(state, splitId) {
   return (state.exercises || []).filter((e) => e.splitId === splitId && !e.archived);
 }
+// A saved workout only counts toward progress/PRs/history while it's still the split
+// logged for that day. Switching the day to another split (without re-saving) orphans
+// the old one, so it disappears from progress — but is restored if you switch back.
+function workoutActive(state, date, w) {
+  return !!w && !!w.exercises && w.splitId === state.gym[date];
+}
 export function exerciseHasData(state, exId) {
   return Object.values(state.workouts || {}).some((w) => w.exercises && w.exercises[exId]);
 }
 export function exerciseHistory(state, exId, type) {
   const out = [];
   Object.entries(state.workouts || {}).forEach(([date, w]) => {
-    const e = w.exercises && w.exercises[exId];
+    if (!workoutActive(state, date, w)) return;
+    const e = w.exercises[exId];
     if (e) out.push({ date, metric: workoutMetric(type, e), entry: e });
   });
   return out.sort((a, b) => a.date.localeCompare(b.date));
@@ -338,7 +345,8 @@ export function exerciseBest(state, exId, type, beforeDate) {
   let best = 0;
   Object.entries(state.workouts || {}).forEach(([date, w]) => {
     if (beforeDate && date >= beforeDate) return;
-    const e = w.exercises && w.exercises[exId];
+    if (!workoutActive(state, date, w)) return;
+    const e = w.exercises[exId];
     if (e) { const m = workoutMetric(type, e); if (m > best) best = m; }
   });
   return best;
@@ -347,7 +355,8 @@ export function lastExerciseEntry(state, exId, beforeDate) {
   let latest = null, latestDate = "";
   Object.entries(state.workouts || {}).forEach(([date, w]) => {
     if (beforeDate && date >= beforeDate) return;
-    const e = w.exercises && w.exercises[exId];
+    if (!workoutActive(state, date, w)) return;
+    const e = w.exercises[exId];
     if (e && date > latestDate) { latestDate = date; latest = e; }
   });
   return latest;

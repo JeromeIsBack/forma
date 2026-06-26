@@ -1,12 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Icon } from "./ui.jsx";
+import { Icon, Ring } from "./ui.jsx";
 import { FormaWordmark } from "./BoltLogo.jsx";
+import { levelFromXp, levelName } from "../lib/store.js";
 
 const ITEMS = [
-  { id: "profile", label: "Character", icon: "user-bolt" },
-  { id: "dojo", label: "The Dojo", icon: "karate" },
-  { id: "history", label: "History", icon: "calendar-stats" },
-  { id: "settings", label: "Settings", icon: "settings" },
+  { id: "profile", label: "Character", sub: "Stats, goal & measurements", icon: "user-bolt", color: "#A78BFA" },
+  { id: "dojo", label: "The Dojo", sub: "Build splits & meal presets", icon: "karate", color: "#C6F432" },
+  { id: "history", label: "History", sub: "Your full training log", icon: "calendar-stats", color: "#5DE0C4" },
+  { id: "settings", label: "Settings", sub: "Themes, units & data", icon: "settings", color: "#FFC53D" },
 ];
 
 export function MenuButton({ onClick, dark }) {
@@ -28,60 +29,90 @@ export function MenuButton({ onClick, dark }) {
   );
 }
 
-export function NavDrawer({ open, onClose, go, current }) {
+export function NavDrawer({ open, onClose, go, current, state }) {
+  const lv = state ? levelFromXp(state.xp || 0) : { level: 1, into: 0, need: 300 };
+  const name = levelName(lv.level);
+  const toNext = Math.max(0, lv.need - lv.into);
+
   return (
     <AnimatePresence>
       {open && (
         <>
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: "fixed", inset: 0, background: "rgba(13,10,20,0.55)", zIndex: 100, backdropFilter: "blur(2px)" }}
+            style={{ position: "fixed", inset: 0, background: "rgba(10,8,16,0.6)", zIndex: 100, backdropFilter: "blur(3px)" }}
           />
           <motion.nav
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 380, damping: 38 }}
             style={{
               position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 101,
-              width: "78%", maxWidth: 300,
-              background: "var(--cloud)", borderLeft: "1px solid var(--line)",
-              padding: "calc(20px + env(safe-area-inset-top)) 18px 24px",
-              display: "flex", flexDirection: "column",
+              width: "84%", maxWidth: 322,
+              background: "linear-gradient(165deg, #2c1a63 0%, #1a1330 56%, #110d1b 100%)",
+              borderLeft: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "-22px 0 64px rgba(0,0,0,0.55)",
+              padding: "calc(20px + env(safe-area-inset-top)) 16px 18px",
+              display: "flex", flexDirection: "column", overflow: "hidden",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
-              <FormaWordmark />
+            <div style={{ position: "absolute", top: -90, right: -70, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(124,58,237,0.5), transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -70, left: -70, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle, rgba(198,244,50,0.12), transparent 70%)", pointerEvents: "none" }} />
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, position: "relative" }}>
+              <FormaWordmark style={{ color: "#fff" }} />
               <button onClick={onClose} aria-label="Close menu"
-                style={{ width: 36, height: 36, borderRadius: "var(--r-md)", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-2)" }}>
+                style={{ width: 36, height: 36, borderRadius: "var(--r-md)", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.85)" }}>
                 <Icon name="x" size={19} />
               </button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {ITEMS.map((it) => {
+            <motion.button
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
+              onClick={() => { go("profile"); onClose(); }}
+              style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, padding: 14, borderRadius: 18, width: "100%", textAlign: "left", marginBottom: 18,
+                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(8px)" }}>
+              <Ring value={lv.into} max={lv.need} size={58} stroke={6} track="rgba(255,255,255,0.14)" color="#C6F432">
+                <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 19, color: "#fff" }}>{lv.level}</div>
+              </Ring>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 9.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Level {lv.level}</div>
+                <div style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 17, color: "#fff", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+                <div style={{ fontSize: 11, color: "#C6F432", marginTop: 3 }}>{toNext} XP to level {lv.level + 1}</div>
+              </div>
+              <Icon name="chevron-right" size={18} style={{ color: "rgba(255,255,255,0.4)" }} />
+            </motion.button>
+
+            <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 9 }}>
+              {ITEMS.map((it, i) => {
                 const active = current === it.id;
                 return (
-                  <button key={it.id} onClick={() => { go(it.id); onClose(); }}
+                  <motion.button key={it.id}
+                    initial={{ opacity: 0, x: 26 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.08 + i * 0.05, type: "spring", stiffness: 420, damping: 34 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => { go(it.id); onClose(); }}
                     style={{
-                      display: "flex", alignItems: "center", gap: 13,
-                      padding: "13px 14px", borderRadius: "var(--r-md)", width: "100%", textAlign: "left",
-                      background: active ? "var(--violet)" : "transparent",
-                      color: active ? "#fff" : "var(--text)",
+                      display: "flex", alignItems: "center", gap: 13, padding: "12px 13px", borderRadius: 16, width: "100%", textAlign: "left",
+                      background: active ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.045)",
+                      border: active ? `1px solid ${it.color}` : "1px solid rgba(255,255,255,0.07)",
+                      boxShadow: active ? `0 0 24px ${it.color}3a` : "none",
                     }}>
-                    <Icon name={it.icon} size={20} style={{ color: active ? "#fff" : "var(--violet)" }} />
-                    <span style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 15 }}>{it.label}</span>
-                    {active && <Icon name="check" size={16} style={{ marginLeft: "auto" }} />}
-                  </button>
+                    <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `${it.color}22`, border: `1px solid ${it.color}44` }}>
+                      <Icon name={it.icon} size={19} style={{ color: it.color }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 15, color: "#fff" }}>{it.label}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{it.sub}</div>
+                    </div>
+                    <Icon name={active ? "circle-check" : "chevron-right"} size={17} style={{ color: active ? it.color : "rgba(255,255,255,0.35)" }} />
+                  </motion.button>
                 );
               })}
             </div>
 
-            <div style={{ marginTop: "auto", fontSize: 11, color: "var(--text-3)", textAlign: "center" }}>
-              Forma · your data stays on this device
+            <div style={{ position: "relative", marginTop: "auto", paddingTop: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.42)" }}>
+              <Icon name="lock" size={12} /> Your data stays on this device
             </div>
           </motion.nav>
         </>

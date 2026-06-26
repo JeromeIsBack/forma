@@ -124,7 +124,7 @@ export default function App() {
       </AnimatePresence>
       </div>
 
-      <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} go={go} current={view} />
+      <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} go={go} current={view} state={state} />
       <BottomNav current={view} go={go} />
 
       <AnimatePresence>

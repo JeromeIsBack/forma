@@ -216,7 +216,7 @@ function MiniBars({ data, height = 26 }) {
 function StrengthSection({ state }) {
   const [open, setOpen] = useState(null);
   const unit = state.settings.unit || "kg";
-  const withData = (state.exercises || []).filter((e) => exerciseHasData(state, e.id));
+  const withData = (state.exercises || []).filter((e) => exerciseHistory(state, e.id, e.type).length > 0);
   const prs = exercisePRs(state).slice(0, 3);
   const splits = getSplits(state);
 
