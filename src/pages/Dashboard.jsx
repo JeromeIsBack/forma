@@ -93,11 +93,16 @@ export default function Dashboard({ state, go, onMenu }) {
             <Icon name="chevron-right" size={14} style={{ color: "#8a7fb0" }} />
           </div>
         </button>
-        <div style={{ height: 8, background: "#2e2740", borderRadius: 99, marginTop: 16, overflow: "hidden" }}>
-          <motion.div initial={{ width: 0 }} animate={{ width: `${xpPct}%` }} transition={{ duration: 1.1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            style={{ height: "100%", borderRadius: 99, background: "linear-gradient(90deg,#C6F432,#5DE0C4)" }} />
+        <div style={{ marginTop: 18, display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#cbbff0", display: "flex", alignItems: "center", gap: 5 }}>
+            <Icon name="bolt" size={11} style={{ color: "var(--lime)" }} /> Level progress
+          </span>
+          <span style={{ fontSize: 11, color: "#8a7fb0" }}>{need - into} XP to LVL {level + 1}</span>
         </div>
-        <div style={{ fontSize: 11, color: "#8a7fb0", marginTop: 6 }}>{need - into} XP to level {level + 1}</div>
+        <div style={{ height: 7, background: "rgba(255,255,255,0.13)", borderRadius: 99, overflow: "hidden" }}>
+          <motion.div initial={{ width: 0 }} animate={{ width: `${xpPct}%` }} transition={{ duration: 1.1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ height: "100%", borderRadius: 99, background: "var(--violet)" }} />
+        </div>
       </motion.div>
 
       <motion.div {...fade(3)} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: 14 }}>

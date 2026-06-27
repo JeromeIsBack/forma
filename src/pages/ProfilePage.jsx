@@ -1,13 +1,26 @@
-import { Icon } from "../components/ui.jsx";
+import { Icon, Ring } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { MeasurementsSection } from "../components/MeasurementsSection.jsx";
 import { NumberField } from "../components/NumberField.jsx";
-import { proteinTarget, recommendedMultiplier, effectiveMultiplier, today, clamp, toUnit, fromUnit, unitLabel, fmtWeight } from "../lib/store.js";
+import { proteinTarget, recommendedMultiplier, effectiveMultiplier, today, clamp, toUnit, fromUnit, unitLabel, fmtWeight, levelFromXp, levelName } from "../lib/store.js";
+
+const EARN = [
+  { icon: "barbell", label: "Log a gym session", xp: "+50" },
+  { icon: "meat", label: "Hit your protein target", xp: "+45" },
+  { icon: "trophy", label: "Set a personal record", xp: "+20" },
+  { icon: "calendar-check", label: "Hit your weekly target", xp: "+100" },
+  { icon: "flame", label: "Streak milestones (4\u201324 wks)", xp: "+150\u20131000" },
+  { icon: "ruler-2", label: "Log a measurement check-in", xp: "+30" },
+  { icon: "scale", label: "Log your body weight", xp: "+10" },
+  { icon: "medal", label: "Rank up an achievement tier", xp: "+50\u2013400" },
+];
 
 const GOALS = [{ id: "recomp", label: "Recomp" }, { id: "cut", label: "Cut" }, { id: "maintain", label: "Maintain" }, { id: "bulk", label: "Bulk" }];
 const ACTIVITY = [{ id: "light", label: "Light" }, { id: "moderate", label: "Moderate" }, { id: "active", label: "Active" }];
 
 export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
+  const lv = levelFromXp(state.xp || 0);
+  const tierName = levelName(lv.level);
   const p = state.profile;
   const target = proteinTarget(p);
   const effMult = effectiveMultiplier(p);
@@ -36,6 +49,34 @@ export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
       <Field label="Name" full>
         <input className="input" placeholder="Your name or alias" maxLength={24} value={p.name || ""} onChange={(e) => setField("name", e.target.value)} />
       </Field>
+
+      <div className="section-label">Progression</div>
+      <div className="card" style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 13 }}>
+          <Ring value={lv.into} max={lv.need} size={56} stroke={6} track="var(--violet-soft)" color="var(--violet)">
+            <div style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize: 18, color: "var(--text)" }}>{lv.level}</div>
+          </Ring>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)", fontWeight: 700 }}>Level {lv.level}</div>
+            <div style={{ fontFamily: "var(--display)", fontWeight: 600, fontSize: 17, color: "var(--text)", marginTop: 1 }}>{tierName}</div>
+            <div style={{ fontSize: 11.5, color: "var(--violet)", marginTop: 2 }}>{(state.xp || 0).toLocaleString()} XP · {lv.need - lv.into} to level {lv.level + 1}</div>
+          </div>
+        </div>
+        <div style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Ways to earn XP</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {EARN.map((e) => (
+              <div key={e.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: "var(--violet-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name={e.icon} size={15} style={{ color: "var(--violet)" }} />
+                </div>
+                <span style={{ flex: 1, fontSize: 13, color: "var(--text)" }}>{e.label}</span>
+                <span className="num" style={{ fontSize: 12.5, fontWeight: 600, color: "var(--violet)" }}>{e.xp}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <div className="section-label">Body stats</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>

@@ -176,6 +176,14 @@ function mergeDefaults(saved) {
   return ensureUniqueIds(merged);
 }
 
+// Validate + normalise an imported backup (accepts a wrapped {app,state} or a bare state).
+export function importState(raw) {
+  const data = raw && typeof raw === "object" && raw.app === "forma" && raw.state ? raw.state : raw;
+  if (!data || typeof data !== "object") return null;
+  if (!data.profile && !data.routine && !data.sources && !data.gym) return null;
+  try { return mergeDefaults(data); } catch { return null; }
+}
+
 export function getSplits(state) {
   return state.routine && state.routine.splits && state.routine.splits.length
     ? state.routine.splits : DEFAULT_SPLITS;
@@ -188,10 +196,17 @@ export function weeklyTarget(state) {
 export const XP_PER_GYM = 50;
 export const XP_PER_PROTEIN_HIT = 45;
 export const XP_PER_PR = 20;
+export const XP_PER_WEEK_TARGET = 100;
+export const XP_PER_MEASUREMENT = 30;
+export const XP_PER_WEIGHT = 10;
+export const ACH_TIER_XP = [50, 100, 150, 250, 400]; // Bronze, Silver, Gold, Platinum, Diamond
+export const STREAK_MILESTONES = [
+  { weeks: 4, xp: 150 }, { weeks: 8, xp: 300 }, { weeks: 12, xp: 500 }, { weeks: 24, xp: 1000 },
+];
 
 export function levelFromXp(xp) {
   let level = 1, need = 300, acc = 0;
-  while (xp >= acc + need) { acc += need; level += 1; need = Math.round(need * 1.25); }
+  while (xp >= acc + need) { acc += need; level += 1; need = Math.round(need * 1.18); }
   return { level, into: xp - acc, need, floor: acc };
 }
 export const LEVEL_NAMES = [
@@ -251,6 +266,25 @@ export function gymStreak(state) {
   if (!good(cursor)) cursor = addDays(cursor, -7);
   while (good(cursor)) { streak += 1; cursor = addDays(cursor, -7); }
   return streak;
+}
+// Longest consecutive run of good weeks ever — used for permanent streak-milestone XP,
+// so breaking a streak never costs you levels you already earned.
+export function longestGymStreak(state) {
+  const target = weeklyTarget(state);
+  const frozen = new Set(state.frozenWeeks || []);
+  const weeks = {};
+  Object.keys(state.gym).forEach((d) => { const w = weekKey(d); weeks[w] = (weeks[w] || 0) + 1; });
+  const good = new Set();
+  Object.keys(weeks).forEach((w) => { if (weeks[w] >= target) good.add(w); });
+  frozen.forEach((w) => good.add(w));
+  if (good.size === 0) return 0;
+  const sorted = [...good].sort();
+  let best = 1, run = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === addDays(sorted[i - 1], 7)) { run += 1; if (run > best) best = run; }
+    else run = 1;
+  }
+  return best;
 }
 
 export function completedWeeks(state) {
@@ -614,7 +648,28 @@ export function recomputeXp(state) {
     (d) => dayProtein(state, d) >= proteinTarget(state.profile)
   ).length * XP_PER_PROTEIN_HIT;
   const prXp = exercisePRs(state).length * XP_PER_PR;
-  return gymXp + proteinXp + prXp;
+
+  // Weekly target met: bonus for every ISO week that hit the planned session count.
+  const target = weeklyTarget(state);
+  const weekCounts = {};
+  Object.keys(state.gym).forEach((d) => { const w = weekKey(d); weekCounts[w] = (weekCounts[w] || 0) + 1; });
+  const weeklyXp = Object.values(weekCounts).filter((n) => n >= target).length * XP_PER_WEEK_TARGET;
+
+  // Streak milestones: permanent, based on the longest streak ever reached.
+  const best = longestGymStreak(state);
+  const streakXp = STREAK_MILESTONES.reduce((sum, m) => sum + (best >= m.weeks ? m.xp : 0), 0);
+
+  // Tracking depth: measurement check-ins and body-weight logs (counted once per day).
+  const measureXp = new Set((state.measurements || []).map((m) => m.date)).size * XP_PER_MEASUREMENT;
+  const weightXp = new Set((state.weightLog || []).map((w) => w.date)).size * XP_PER_WEIGHT;
+
+  // Achievement XP: cumulative for every tier reached on each achievement.
+  const achXp = ACHIEVEMENTS.reduce((sum, a) => {
+    const idx = tierFor(a, state).idx;
+    return sum + ACH_TIER_XP.slice(0, idx).reduce((x, y) => x + y, 0);
+  }, 0);
+
+  return gymXp + proteinXp + prXp + weeklyXp + streakXp + measureXp + weightXp + achXp;
 }
 
 function maintainUnlocks(next) {

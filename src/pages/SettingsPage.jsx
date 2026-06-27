@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
-import { freshState, achievementBaselineNow, THEMES } from "../lib/store.js";
+import { freshState, achievementBaselineNow, THEMES, today, importState } from "../lib/store.js";
 import { requestPermission, permissionStatus, showNotification } from "../lib/notify.js";
 
 export default function SettingsPage({ state, update, replace, go, onMenu, celebrate }) {
@@ -35,6 +35,38 @@ export default function SettingsPage({ state, update, replace, go, onMenu, celeb
     if (!window.confirm("Are you absolutely sure? Everything will be erased.")) return;
     replace(freshState());
     go("dashboard");
+  }
+
+  const fileRef = useRef(null);
+  function exportBackup() {
+    try {
+      const payload = { app: "forma", version: 1, exportedAt: new Date().toISOString(), state };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `forma-backup-${today()}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      celebrate("win", "Backup downloaded");
+    } catch { window.alert("Could not export your backup."); }
+  }
+  function handleImportFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed;
+      try { parsed = JSON.parse(reader.result); } catch { window.alert("That file isn't valid JSON."); return; }
+      const normalized = importState(parsed);
+      if (!normalized) { window.alert("That doesn't look like a Forma backup."); return; }
+      if (!window.confirm("Restore this backup? It replaces all current data on this device.")) return;
+      replace(normalized);
+      go("dashboard");
+      celebrate("win", "Backup restored");
+    };
+    reader.onerror = () => window.alert("Could not read that file.");
+    reader.readAsText(file);
   }
 
   const notifOn = state.settings.notifications;
@@ -112,8 +144,33 @@ export default function SettingsPage({ state, update, replace, go, onMenu, celeb
           <Icon name="database" size={20} style={{ color: "#2c3a00" }} />
         </div>
         <div style={{ fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.5 }}>
-          Everything is stored privately on this device (IndexedDB). Nothing leaves your phone.
+          Stored privately on this device (IndexedDB). Export a backup so a browser clear or a new phone can\'t wipe your progress.
         </div>
+      </div>
+
+      <div className="section-label">Backup</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <button onClick={exportBackup} className="card" style={{ display: "flex", alignItems: "center", gap: 13, padding: 15, width: "100%", textAlign: "left" }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--violet-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Icon name="download" size={20} style={{ color: "var(--violet)" }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14 }}>Export backup</div>
+            <div style={{ fontSize: 11.5, color: "var(--text-2)", marginTop: 2 }}>Download a .json copy of all your data.</div>
+          </div>
+          <Icon name="chevron-right" size={18} style={{ color: "var(--text-3)" }} />
+        </button>
+        <button onClick={() => fileRef.current && fileRef.current.click()} className="card" style={{ display: "flex", alignItems: "center", gap: 13, padding: 15, width: "100%", textAlign: "left" }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--violet-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Icon name="upload" size={20} style={{ color: "var(--violet)" }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 14 }}>Import backup</div>
+            <div style={{ fontSize: 11.5, color: "var(--text-2)", marginTop: 2 }}>Restore everything from a backup file.</div>
+          </div>
+          <Icon name="chevron-right" size={18} style={{ color: "var(--text-3)" }} />
+        </button>
+        <input ref={fileRef} type="file" accept="application/json,.json" onChange={handleImportFile} style={{ display: "none" }} />
       </div>
 
       <div className="section-label">Reset</div>
