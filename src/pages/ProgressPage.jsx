@@ -37,7 +37,7 @@ export default function ProgressPage({ state, go, onMenu }) {
       return 1;
     })
   );
-  const heatColors = ["var(--cloud)", "#cecbf6", "#7f77dd", "#534ab7"];
+  const heatColors = ["var(--cloud)", "color-mix(in srgb, var(--violet) 26%, var(--cloud))", "color-mix(in srgb, var(--violet) 60%, var(--cloud))", "var(--violet)"];
 
   const sessions = Object.keys(state.gym).length;
   const proteinDays = Object.keys(state.protein);
@@ -171,7 +171,7 @@ export default function ProgressPage({ state, go, onMenu }) {
         <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 64 }}>
           {wl.map((w, i) => {
             const h = 30 + ((w.kg - minKg) / range) * 60;
-            return <div key={i} style={{ flex: 1, height: `${h}%`, background: "linear-gradient(180deg,#7C3AED,#5DE0C4)", borderRadius: "3px 3px 0 0", opacity: 0.5 + (i / wl.length) * 0.5 }} />;
+            return <div key={i} style={{ flex: 1, height: `${h}%`, background: "linear-gradient(180deg, var(--violet), #5DE0C4)", borderRadius: "3px 3px 0 0", opacity: 0.5 + (i / wl.length) * 0.5 }} />;
           })}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontSize: 11, color: "var(--text-2)" }}>

@@ -39,7 +39,7 @@ export function CountUp({ value, duration = 900, format, className = "", style }
   return <span className={className} style={style}>{shown}</span>;
 }
 
-export function Ring({ value, max, size = 56, stroke = 6, track = "#efe9ff", color = "#7C3AED", children }) {
+export function Ring({ value, max, size = 56, stroke = 6, track = "#efe9ff", color = "var(--violet)", children }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = max > 0 ? Math.min(value / max, 1) : 0;

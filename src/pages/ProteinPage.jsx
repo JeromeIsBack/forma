@@ -6,6 +6,7 @@ import { GoalCoach } from "../components/GoalCoach.jsx";
 import { today, addDays, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp, presetContents, uid } from "../lib/store.js";
 import { DateNav } from "../components/DateNav.jsx";
 import { QuickAddSource } from "../components/QuickAddSource.jsx";
+import { MealScanner } from "../components/MealScanner.jsx";
 
 export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [search, setSearch] = useState("");
@@ -17,6 +18,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [savingPreset, setSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [date, setDate] = useState(today());
+  const [scanning, setScanning] = useState(false);
 
   const target = proteinTarget(state.profile);
   const total = Math.round(dayProtein(state, date));
@@ -63,6 +65,17 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   }
   function clearCustom() {
     update((s) => { if (s.protein[date]) { delete s.protein[date]._custom; if (Object.keys(s.protein[date]).length === 0) delete s.protein[date]; } return s; });
+  }
+  function logServingFromScan(id) {
+    update((s) => { if (!s.protein[date]) s.protein[date] = {}; s.protein[date][id] = (s.protein[date][id] || 0) + 1; return s; });
+  }
+  function addGramsFromScan(g) {
+    update((s) => { if (!s.protein[date]) s.protein[date] = {}; s.protein[date]._custom = (s.protein[date]._custom || 0) + g; return s; });
+  }
+  function createSourceFromScan(name, avg, type) {
+    const id = uid("c");
+    update((s) => { if (!s.sources) s.sources = []; s.sources.push({ id, name: name.trim(), avg: clamp(Math.round(avg), 1, 300), unit: "serving", type: type || "Other" }); return s; });
+    return id;
   }
   function presetTotal(pr) {
     let t = pr.customG || 0;
@@ -114,7 +127,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
           <div><CountUp value={total} className="num" style={{ fontSize: 34 }} /><span className="num" style={{ fontSize: 16, color: "rgba(255,255,255,0.7)" }}>g</span></div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>of {target}g</div>
         </div>
-        <div style={{ height: 9, background: "#2e2740", borderRadius: 99, overflow: "hidden" }}>
+        <div style={{ height: 9, background: "rgba(255,255,255,0.14)", borderRadius: 99, overflow: "hidden" }}>
           <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             style={{ height: "100%", borderRadius: 99, background: total >= target ? "linear-gradient(90deg,#C6F432,#5DE0C4)" : "var(--violet)" }} />
         </div>
@@ -189,6 +202,17 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
           <Icon name={editing ? "check" : "pencil"} size={14} /> {editing ? "Done" : "Edit"}
         </button>
       </div>
+
+      <button onClick={() => setScanning(true)} style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "11px 13px", marginBottom: 10, borderRadius: "var(--r-md)", border: "1px solid var(--violet-soft)", background: "var(--violet-soft)", color: "var(--violet)", textAlign: "left" }}>
+        <Icon name="camera" size={17} />
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>Scan a label to find protein</span>
+        <Icon name="chevron-right" size={16} />
+      </button>
+
+      {scanning && (
+        <MealScanner state={state} celebrate={celebrate} onClose={() => setScanning(false)}
+          onLogSource={logServingFromScan} onLogGrams={addGramsFromScan} onCreateSource={createSourceFromScan} />
+      )}
 
       <div style={{ position: "relative", marginBottom: 10 }}>
         <Icon name="search" size={16} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />

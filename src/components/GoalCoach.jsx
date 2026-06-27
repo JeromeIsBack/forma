@@ -18,7 +18,7 @@ export function GoalCoach({ goal, context, note }) {
     <div className="card" style={{ padding: "15px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 11 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <span style={{ width: 6, height: 6, borderRadius: 99, background: g.color, flexShrink: 0 }} />
+          <span style={{ width: 6, height: 6, borderRadius: 99, background: "var(--violet)", flexShrink: 0 }} />
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", color: "var(--text-3)", textTransform: "uppercase" }}>
             Game plan · {g.label}
           </span>
@@ -34,7 +34,7 @@ export function GoalCoach({ goal, context, note }) {
       </div>
 
       {note && (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 10, fontSize: 12.5, lineHeight: 1.4, color: g.color, fontWeight: 500 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 10, fontSize: 12.5, lineHeight: 1.4, color: "var(--violet)", fontWeight: 500 }}>
           <Icon name="bolt" size={13} style={{ marginTop: 1, flexShrink: 0 }} />
           <span>{note}</span>
         </div>

@@ -177,6 +177,28 @@ function mergeDefaults(saved) {
 }
 
 // Validate + normalise an imported backup (accepts a wrapped {app,state} or a bare state).
+// Parse OCR'd / pasted label text: find protein sources you already have, and any "protein Xg" amounts.
+export function parseScan(text, sources) {
+  if (!text || typeof text !== "string") return { matches: [], grams: [], raw: "" };
+  const norm = " " + text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim() + " ";
+  const STOP = new Set(["the","and","with","per","serving","servings","protein","proteins","source","sources","high","low","fat","light","natural","powder","food","value","values","nutrition","energy","raw","cooked","fresh","lean","plain","style","mix","blend","each","plus","made","from","contains","total","new","pure","free","added","whole","half"]);
+  const seen = new Set(); const matches = [];
+  for (const src of (sources || [])) {
+    const words = src.name.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w));
+    if (!words.length) continue;
+    const hit = words.some((w) => norm.includes(" " + w + " "));
+    if (hit && !seen.has(src.id)) { seen.add(src.id); matches.push(src); }
+  }
+  const grams = [];
+  const re = /(?:protein[^0-9]{0,14}(\d{1,3}(?:[.,]\d)?)\s*g)|(\d{1,3}(?:[.,]\d)?)\s*g[^a-z0-9]{0,6}protein/gi;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const n = parseFloat((m[1] || m[2] || "").replace(",", "."));
+    if (n >= 1 && n <= 120) grams.push(Math.round(n));
+  }
+  return { matches, grams: [...new Set(grams)], raw: text.trim() };
+}
+
 export function importState(raw) {
   const data = raw && typeof raw === "object" && raw.app === "forma" && raw.state ? raw.state : raw;
   if (!data || typeof data !== "object") return null;

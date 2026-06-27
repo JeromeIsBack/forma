@@ -48,7 +48,7 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
       <PageHead go={go} onMenu={onMenu} title="Gym" sub={`${target} sessions a week, every week`} />
 
       <div className="card" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18, background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))", border: "none", color: "#fff" }}>
-        <Ring value={sessions} max={target} size={72} stroke={8} track="#2e2740" color="#C6F432">
+        <Ring value={sessions} max={target} size={72} stroke={8} track="rgba(255,255,255,0.14)" color="#C6F432">
           <div className="num" style={{ fontSize: 22, color: "#fff" }}>{sessions}<span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>/{target}</span></div>
         </Ring>
         <div>
