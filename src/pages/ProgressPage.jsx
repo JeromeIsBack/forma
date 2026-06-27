@@ -279,7 +279,7 @@ function StrengthSection({ state }) {
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 13px", borderRadius: 99, background: "linear-gradient(135deg, var(--hero-1), var(--hero-2))", color: "#fff" }}>
                 <Icon name="trophy" size={14} style={{ color: "#C6F432" }} />
                 <span style={{ fontSize: 12.5, fontWeight: 600 }}>{p.name}</span>
-                <span style={{ fontSize: 11, color: "#cabff0" }}>{metricLabel(p.type, p.metric, unit)}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>{metricLabel(p.type, p.metric, unit)}</span>
               </div>
             ))}
           </div>

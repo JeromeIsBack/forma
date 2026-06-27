@@ -81,23 +81,23 @@ export default function Dashboard({ state, go, onMenu }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--violet)", padding: "6px 13px", borderRadius: 99, fontFamily: "var(--display)", fontWeight: 500, fontSize: 12 }}>
             <Icon name="bolt" size={14} /> LVL {level} · {levelName(level)}
           </div>
-          <div style={{ fontSize: 12, color: "#b9aedc" }}>{state.xp.toLocaleString()} XP</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)" }}>{state.xp.toLocaleString()} XP</div>
         </div>
         <button onClick={() => go("protein")} style={{ display: "block", width: "100%", textAlign: "left" }}>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
             <CountUp value={protein} className="num" style={{ fontSize: 52, background: "linear-gradient(95deg,#C6F432,#5DE0C4)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }} />
-            <span className="num" style={{ fontSize: 20, color: "#8a7fb0", paddingBottom: 4 }}>/{target}g</span>
+            <span className="num" style={{ fontSize: 20, color: "rgba(255,255,255,0.5)", paddingBottom: 4 }}>/{target}g</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#b9aedc", marginTop: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "rgba(255,255,255,0.72)", marginTop: 6 }}>
             {protein >= target ? "protein crushed today" : `${target - protein}g protein to go`}
-            <Icon name="chevron-right" size={14} style={{ color: "#8a7fb0" }} />
+            <Icon name="chevron-right" size={14} style={{ color: "rgba(255,255,255,0.5)" }} />
           </div>
         </button>
         <div style={{ marginTop: 18, display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#cbbff0", display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.72)", display: "flex", alignItems: "center", gap: 5 }}>
             <Icon name="bolt" size={11} style={{ color: "var(--lime)" }} /> Level progress
           </span>
-          <span style={{ fontSize: 11, color: "#8a7fb0" }}>{need - into} XP to LVL {level + 1}</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{need - into} XP to LVL {level + 1}</span>
         </div>
         <div style={{ height: 7, background: "rgba(255,255,255,0.13)", borderRadius: 99, overflow: "hidden" }}>
           <motion.div initial={{ width: 0 }} animate={{ width: `${xpPct}%` }} transition={{ duration: 1.1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}

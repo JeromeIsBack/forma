@@ -27,7 +27,7 @@
   --r-lg: 20px;
   --r-xl: 26px;
   --shadow: 0 8px 30px rgba(20, 16, 30, 0.10);
-  --shadow-glow: 0 10px 40px rgba(124, 58, 237, 0.28);
+  --shadow-glow: 0 10px 40px color-mix(in srgb, var(--violet) 30%, transparent);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }

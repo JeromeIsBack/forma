@@ -111,14 +111,14 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
 
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff", background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
-          <div><CountUp value={total} className="num" style={{ fontSize: 34 }} /><span className="num" style={{ fontSize: 16, color: "#cabff0" }}>g</span></div>
-          <div style={{ fontSize: 13, color: "#cabff0" }}>of {target}g</div>
+          <div><CountUp value={total} className="num" style={{ fontSize: 34 }} /><span className="num" style={{ fontSize: 16, color: "rgba(255,255,255,0.7)" }}>g</span></div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>of {target}g</div>
         </div>
         <div style={{ height: 9, background: "#2e2740", borderRadius: 99, overflow: "hidden" }}>
           <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            style={{ height: "100%", borderRadius: 99, background: total >= target ? "linear-gradient(90deg,#C6F432,#5DE0C4)" : "#b9aedc" }} />
+            style={{ height: "100%", borderRadius: 99, background: total >= target ? "linear-gradient(90deg,#C6F432,#5DE0C4)" : "var(--violet)" }} />
         </div>
-        <div style={{ fontSize: 11.5, color: "#cabff0", marginTop: 9 }}>{total >= target ? "Target reached — strong day." : `${target - total}g to go`}</div>
+        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.7)", marginTop: 9 }}>{total >= target ? "Target reached — strong day." : `${target - total}g to go`}</div>
       </div>
 
       {state.settings.showTips !== false && (

@@ -105,9 +105,9 @@ export default function ProfilePage({ state, update, go, onMenu, celebrate }) {
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginTop: 2, color: "#fff", background: "linear-gradient(140deg, var(--hero-1), var(--hero-2))", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div className="num" style={{ fontSize: 32 }}>{target}g</div>
-          <div style={{ fontSize: 12, color: "#cabff0", marginTop: 3 }}>daily protein target</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 3 }}>daily protein target</div>
         </div>
-        <div style={{ fontSize: 11, color: "#cabff0", textAlign: "right", maxWidth: 140, lineHeight: 1.45 }}>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", textAlign: "right", maxWidth: 140, lineHeight: 1.45 }}>
           {fmtWeight(p.weight, unit)} · {effMult.toFixed(1)} g/kg
           {auto && <div style={{ marginTop: 4 }}>tuned by goal, training, age &amp; build</div>}
         </div>

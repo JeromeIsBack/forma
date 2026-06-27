@@ -49,11 +49,11 @@ export default function GymPage({ state, update, go, onMenu, celebrate }) {
 
       <div className="card" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18, background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))", border: "none", color: "#fff" }}>
         <Ring value={sessions} max={target} size={72} stroke={8} track="#2e2740" color="#C6F432">
-          <div className="num" style={{ fontSize: 22, color: "#fff" }}>{sessions}<span style={{ fontSize: 13, color: "#8a7fb0" }}>/{target}</span></div>
+          <div className="num" style={{ fontSize: 22, color: "#fff" }}>{sessions}<span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>/{target}</span></div>
         </Ring>
         <div>
           <div className="num" style={{ fontSize: 17 }}>{sessions >= target ? "Week complete" : `${target - sessions} to go`}</div>
-          <div style={{ fontSize: 12, color: "#b9aedc", marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", marginTop: 4 }}>
             <Icon name="flame" size={13} style={{ color: "var(--orange)", verticalAlign: -2 }} /> {streak} week streak
           </div>
         </div>

@@ -43,7 +43,7 @@ export default function TrainingPage({ state, update, go, onMenu }) {
 
       <div style={{ borderRadius: "var(--r-lg)", padding: 18, marginBottom: 18, color: "#fff", background: "linear-gradient(145deg, var(--hero-1), var(--hero-2))", display: "flex", alignItems: "center", gap: 14 }}>
         <Icon name="karate" size={30} style={{ color: "#fff" }} />
-        <div style={{ fontSize: 12.5, color: "#cabff0", lineHeight: 1.5 }}>
+        <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
           Your build hub. Set up the exercises in each split and your go-to meal presets — then log them fast from the Gym and Protein tabs.
         </div>
       </div>
