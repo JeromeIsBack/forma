@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Icon } from "./ui.jsx";
-import { SOURCE_TYPES, clamp, uid } from "../lib/store.js";
+import { allTypes, clamp, uid } from "../lib/store.js";
 
 // Inline "add a brand-new protein source" that saves into the overall source list,
 // usable from any source search. onAdded(id) fires after it's saved so the caller
 // can immediately log it / add it to a preset.
-export function QuickAddSource({ query, update, onAdded }) {
+export function QuickAddSource({ query, update, onAdded, state }) {
+  const TYPES = allTypes(state);
   const [open, setOpen] = useState(false);
   const [d, setD] = useState({ name: "", avg: "", unit: "serving", type: "Other" });
 
@@ -37,7 +38,7 @@ export function QuickAddSource({ query, update, onAdded }) {
         <input className="input" placeholder="per (unit)" value={d.unit} onChange={(e) => setD({ ...d, unit: e.target.value })} />
       </div>
       <select className="input" value={d.type} onChange={(e) => setD({ ...d, type: e.target.value })} style={{ marginBottom: 11 }}>
-        {SOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
       <div style={{ display: "flex", gap: 9 }}>
         <button className="cta lime" onClick={save} style={{ boxShadow: "none" }}>Save & use</button>

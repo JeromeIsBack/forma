@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Icon } from "./ui.jsx";
-import { parseScan, SOURCE_TYPES } from "../lib/store.js";
+import { parseScan, allTypes } from "../lib/store.js";
 
 // On-device OCR via Tesseract.js, loaded from CDN the first time it's needed.
 function loadTesseract() {
@@ -27,6 +27,7 @@ export function MealScanner({ state, onClose, celebrate, onLogSource, onLogGrams
   const [cName, setCName] = useState("");
   const [cType, setCType] = useState("Other");
   const fileRef = useRef(null);
+  const TYPES = allTypes(state);
 
   function analyse(text) {
     const r = parseScan(text, state.sources);
@@ -178,7 +179,7 @@ export function MealScanner({ state, onClose, celebrate, onLogSource, onLogGrams
                           <input className="input" autoFocus placeholder="Name (e.g. Skyr, brand X bar)" value={cName} onChange={(e) => setCName(e.target.value)} style={{ marginBottom: 8 }} />
                           <div style={{ display: "flex", gap: 8 }}>
                             <select className="input" value={cType} onChange={(e) => setCType(e.target.value)} style={{ flex: 1 }}>
-                              {SOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                              {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                             </select>
                             <button onClick={saveCreate} className="cta lime" style={{ boxShadow: "none", padding: "0 16px" }} disabled={!cName.trim()}>Save & add</button>
                           </div>

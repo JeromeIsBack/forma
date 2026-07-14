@@ -11,6 +11,12 @@ export const SPLIT_PALETTE = ["#7C3AED", "#5DE0C4", "#FF6B2C", "#FF4D6D", "#FFC5
 
 export const SOURCE_TYPES = ["Meat", "Fish", "Dairy", "Eggs", "Plant", "Supplement", "Snack", "Grain", "Other"];
 
+// Built-in categories plus any the user created in the Dojo.
+export function allTypes(state) {
+  const custom = (state && state.customTypes) || [];
+  return [...SOURCE_TYPES.filter((t) => t !== "Other"), ...custom, "Other"];
+}
+
 export const DEFAULT_SOURCES = [
   { id: "esn", name: "ESN Isoclear shake", avg: 25, unit: "scoop", type: "Supplement" },
   { id: "whey", name: "Whey protein", avg: 24, unit: "scoop", type: "Supplement" },
@@ -92,6 +98,7 @@ export function freshState() {
     freezesEarned: 0,
     frozenWeeks: [],
     presets: [],
+    customTypes: [],
     exercises: [
       { id: "ex_dips", name: "Dips", type: "weighted", splitId: "push" },
       { id: "ex_pushups", name: "Push-ups", type: "reps", splitId: "push" },
@@ -380,6 +387,17 @@ export function exercisePRs(state) {
   });
   return prs.sort((a, b) => b.date.localeCompare(a.date));
 }
+// Which split is up next, following the rotation from the last logged session.
+export function nextSplitFor(state) {
+  const rotation = (state.routine.splits || []).map((s) => s.id);
+  if (!rotation.length) return null;
+  const lastSplit = Object.keys(state.gym || {}).sort().reverse().map((d) => state.gym[d])[0];
+  const id = lastSplit && rotation.includes(lastSplit)
+    ? rotation[(rotation.indexOf(lastSplit) + 1) % rotation.length]
+    : rotation[0];
+  return (state.routine.splits || []).find((s) => s.id === id) || null;
+}
+
 export function suggestNext(type, last, unit = "kg") {
   if (!last) return null;
   if (type === "hold") return `aim ${(Number(last.secs) || 0) + 5}s`;
@@ -658,6 +676,52 @@ export function lastMeasurement(state) {
   const m = state.measurements || [];
   return m.length ? m[m.length - 1] : null;
 }
+// In-app follow-ups: gentle, actionable nudges surfaced on the dashboard.
+// Each is dismissible; dismissals are remembered in settings.dismissed by key+period.
+export function activeNudges(state) {
+  const out = [];
+  const dismissed = (state.settings && state.settings.dismissed) || {};
+  const t = today();
+
+  // measurements — every 30 days
+  const lm = lastMeasurement(state);
+  const mDays = lm ? daysBetween(lm.date, t) : null;
+  if (!lm) {
+    out.push({ key: "meas_baseline", icon: "ruler-2", title: "Set your baseline measurements",
+      body: "Waist, chest, arms — so Progress can show what's actually changing.", cta: "Add them", view: "profile", period: t });
+  } else if (mDays >= 30) {
+    out.push({ key: "meas_due", icon: "ruler-2", title: "Measurement check-in due",
+      body: `It's been ${mDays} days. A 2-minute check-in keeps your recomp trend honest.`, cta: "Update", view: "profile", period: weekKey(t) });
+  }
+
+  // weigh-in — weekly
+  const wl = (state.weightLog || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  const lw = wl[0];
+  const wDays = lw ? daysBetween(lw.date, t) : 999;
+  if (wDays >= 7) {
+    out.push({ key: "weigh_due", icon: "scale", title: "Time to weigh in",
+      body: lw ? `Last logged ${wDays} days ago. Weekly weigh-ins smooth out the noise.` : "Log your weight to start the trend.", cta: "Log weight", view: "profile", period: weekKey(t) });
+  }
+
+  // protein — late in the day and still short
+  const target = proteinTarget(state.profile);
+  const got = Math.round(dayProtein(state, t));
+  const hour = new Date().getHours();
+  if (hour >= 17 && got > 0 && got < target) {
+    out.push({ key: "protein_gap", icon: "meat", title: `${target - got}g of protein to go`,
+      body: "Still time to close the gap and bank the day.", cta: "Close it", view: "protein", period: t });
+  }
+
+  // backup — nudge if never exported and there's real data to lose
+  const dataDays = Object.keys(state.gym || {}).length + Object.keys(state.protein || {}).length;
+  if (dataDays >= 10 && !dismissed["backup"]) {
+    out.push({ key: "backup", icon: "download", title: "Back up your progress",
+      body: "Your data lives only on this device. Export a copy so nothing can wipe it.", cta: "Back up", view: "settings", period: "once" });
+  }
+
+  return out.filter((n) => dismissed[n.key] !== n.period);
+}
+
 export function measurementDue(state) {
   const last = lastMeasurement(state);
   if (!last) return (state.measurements || []).length === 0 ? false : true;

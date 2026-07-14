@@ -1,8 +1,18 @@
+import { useEffect, useRef } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { ACHIEVEMENTS, TIERS, tierFor } from "../lib/store.js";
 
-export default function AchievementsPage({ state, go, onMenu }) {
+export default function AchievementsPage({ state, go, onMenu, focusId }) {
+  const refs = useRef({});
+  useEffect(() => {
+    if (!focusId) return;
+    const el = refs.current[focusId];
+    if (!el) return;
+    const t = setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 260);
+    return () => clearTimeout(t);
+  }, [focusId]);
+
   const ranked = ACHIEVEMENTS.map((a) => ({ ach: a, t: tierFor(a, state) }));
   const unlocked = ranked.filter((r) => r.t.idx > 0).length;
   const totalRanks = ranked.reduce((s, r) => s + r.t.idx, 0);
@@ -31,7 +41,10 @@ export default function AchievementsPage({ state, go, onMenu }) {
           const locked = t.idx === 0;
           const color = locked ? "#9a93a8" : t.tier.color;
           return (
-            <div key={ach.id} className="card" style={{ padding: 16, position: "relative", overflow: "hidden" }}>
+            <div key={ach.id} ref={(el) => { refs.current[ach.id] = el; }} className="card"
+              style={{ padding: 16, position: "relative", overflow: "hidden",
+                border: focusId === ach.id ? "2px solid var(--violet)" : undefined,
+                boxShadow: focusId === ach.id ? "var(--shadow-glow)" : undefined }}>
               {!locked && <div style={{ position: "absolute", top: -40, left: -30, width: 110, height: 110, borderRadius: "50%", background: `radial-gradient(circle, ${color}22, transparent 70%)` }} />}
               <div style={{ display: "flex", gap: 14, alignItems: "flex-start", position: "relative" }}>
                 <div style={{ width: 56, height: 56, borderRadius: 17, flexShrink: 0, position: "relative", overflow: "hidden",

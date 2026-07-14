@@ -20,6 +20,7 @@ export default function App() {
   const [state, update, replace] = useStore();
   const [view, setView] = useState("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [focus, setFocus] = useState(null);
   const [toast, setToast] = useState(null);
   const prevLevel = useRef(null);
   const prevTierScore = useRef(null);
@@ -77,7 +78,7 @@ export default function App() {
     }
   }, [state]);
 
-  const go = (v) => { if (v !== view) { navStack.current.push(view); setView(v); } };
+  const go = (v, f = null) => { setFocus(f); if (v !== view) { navStack.current.push(view); setView(v); } };
   const back = () => {
     const st = navStack.current;
     if (st.length) setView(st.pop());
@@ -95,13 +96,13 @@ export default function App() {
   const onMenu = () => setMenuOpen(true);
 
   const pages = {
-    dashboard: <Dashboard state={state} go={go} onMenu={onMenu} />,
+    dashboard: <Dashboard state={state} update={update} go={go} onMenu={onMenu} />,
     gym: <GymPage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
     protein: <ProteinPage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
     profile: <ProfilePage state={state} update={update} go={go} onMenu={onMenu} celebrate={showToast} />,
     progress: <ProgressPage state={state} go={go} onMenu={onMenu} />,
     history: <HistoryPage state={state} go={go} onMenu={onMenu} />,
-    achievements: <AchievementsPage state={state} go={go} onMenu={onMenu} />,
+    achievements: <AchievementsPage state={state} go={go} onMenu={onMenu} focusId={focus} />,
     settings: <SettingsPage state={state} update={update} replace={replace} go={go} onMenu={onMenu} celebrate={showToast} />,
     dojo: <TrainingPage state={state} update={update} go={go} onMenu={onMenu} />,
   };

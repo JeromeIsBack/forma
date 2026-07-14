@@ -239,7 +239,6 @@ function StrengthSection({ state }) {
     const metrics = hist.map((h) => h.metric);
     const best = Math.max(...metrics, 0);
     const isOpen = open === ex.id;
-    const mx = Math.max(...metrics, 1);
     return (
       <div key={ex.id} style={{ borderTop: "1px solid var(--line)" }}>
         <button onClick={() => setOpen(isOpen ? null : ex.id)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 0", textAlign: "left" }}>
@@ -252,11 +251,7 @@ function StrengthSection({ state }) {
         </button>
         {isOpen && (
           <div style={{ padding: "2px 0 14px" }}>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 54, marginBottom: 10 }}>
-              {hist.slice(-12).map((h, i) => (
-                <div key={i} style={{ flex: 1, height: `${Math.max(14, (h.metric / mx) * 100)}%`, background: "linear-gradient(180deg, var(--violet), #5DE0C4)", borderRadius: "3px 3px 0 0" }} />
-              ))}
-            </div>
+            <LineChart hist={hist.slice(-12)} type={ex.type} unit={unit} />
             {hist.slice(-4).reverse().map((h) => (
               <div key={h.date} className="row">
                 <span style={{ fontSize: 12, color: "var(--text-2)" }}>{new Date(h.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
@@ -301,5 +296,46 @@ function StrengthSection({ state }) {
         )}
       </div>
     </>
+  );
+}
+
+// Line chart of an exercise's progress over its last sessions — themed to the active scheme.
+function LineChart({ hist, type, unit }) {
+  if (!hist || hist.length === 0) return null;
+  const W = 300, H = 76, PL = 6, PR = 6, PT = 10, PB = 14;
+  const vals = hist.map((h) => h.metric);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const span = hi - lo || 1;
+  const n = hist.length;
+  const x = (i) => (n === 1 ? (W - PL - PR) / 2 + PL : PL + (i / (n - 1)) * (W - PL - PR));
+  const y = (v) => PT + (1 - (v - lo) / span) * (H - PT - PB);
+  const pts = hist.map((h, i) => [x(i), y(h.metric)]);
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const area = `${line} L${pts[pts.length - 1][0].toFixed(1)},${H - PB} L${pts[0][0].toFixed(1)},${H - PB} Z`;
+  const last = pts[pts.length - 1];
+  const gid = "g" + Math.round(lo) + "_" + n;
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" style={{ display: "block", overflow: "visible" }}>
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--violet)" stopOpacity="0.26" />
+            <stop offset="100%" stopColor="var(--violet)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <line x1={PL} y1={H - PB} x2={W - PR} y2={H - PB} stroke="var(--line)" strokeWidth="1" />
+        {n > 1 && <path d={area} fill={`url(#${gid})`} />}
+        {n > 1 && <path d={line} fill="none" stroke="var(--violet)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+        {pts.map((p, i) => (
+          <circle key={i} cx={p[0]} cy={p[1]} r={i === n - 1 ? 3.6 : 2.2}
+            fill={i === n - 1 ? "var(--violet)" : "var(--cloud)"} stroke="var(--violet)" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+        ))}
+      </svg>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "var(--text-3)", marginTop: 2 }}>
+        <span>{new Date(hist[0].date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
+        <span style={{ color: "var(--violet)", fontWeight: 600 }}>{metricLabel(type, vals[n - 1], unit)}</span>
+      </div>
+    </div>
   );
 }

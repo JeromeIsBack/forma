@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Icon, CountUp } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { GoalCoach } from "../components/GoalCoach.jsx";
-import { today, addDays, dayProtein, proteinTarget, suggestProtein, SOURCE_TYPES, clamp, presetContents, uid } from "../lib/store.js";
+import { today, addDays, dayProtein, proteinTarget, suggestProtein, allTypes, clamp, presetContents, uid } from "../lib/store.js";
 import { DateNav } from "../components/DateNav.jsx";
 import { QuickAddSource } from "../components/QuickAddSource.jsx";
 import { MealScanner } from "../components/MealScanner.jsx";
@@ -27,7 +27,8 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const presets = state.presets || [];
   const hasToday = Object.keys(entry).length > 0;
 
-  const typesPresent = ["All", ...SOURCE_TYPES.filter((t) => state.sources.some((s) => s.type === t))];
+  const TYPES = allTypes(state);
+  const typesPresent = ["All", ...TYPES.filter((t) => state.sources.some((s) => s.type === t))];
   const q = search.trim().toLowerCase();
   const filtered = state.sources.filter((s) =>
     (typeFilter === "All" || s.type === typeFilter) && (!q || s.name.toLowerCase().includes(q))
@@ -246,7 +247,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
                   <input className="input" type="number" inputMode="numeric" value={src.avg} onChange={(e) => updateSource(src.id, "avg", e.target.value)} style={{ height: 40, fontSize: 13.5 }} placeholder="g" />
                   <input className="input" value={src.unit} onChange={(e) => updateSource(src.id, "unit", e.target.value)} style={{ height: 40, fontSize: 13.5 }} placeholder="unit" />
                   <select className="input" value={src.type || "Other"} onChange={(e) => updateSource(src.id, "type", e.target.value)} style={{ height: 40, fontSize: 13.5, flexShrink: 0, width: 110 }}>
-                    {SOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
               </div>
@@ -264,7 +265,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
           );
         })}
         {q && !editing && (
-          <QuickAddSource query={search} update={update} onAdded={(newId) => { update((s) => { if (!s.protein[date]) s.protein[date] = {}; s.protein[date][newId] = (s.protein[date][newId] || 0) + 1; return s; }); setSearch(""); }} />
+          <QuickAddSource query={search} update={update} state={state} onAdded={(newId) => { update((s) => { if (!s.protein[date]) s.protein[date] = {}; s.protein[date][newId] = (s.protein[date][newId] || 0) + 1; return s; }); setSearch(""); }} />
         )}
       </div>
 
@@ -277,7 +278,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
             <input className="input" placeholder="per (unit)" value={draft.unit} onChange={(e) => setDraft({ ...draft, unit: e.target.value })} />
           </div>
           <select className="input" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value })} style={{ marginBottom: 11 }}>
-            {SOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
           <div style={{ display: "flex", gap: 9 }}>
             <button className="cta lime" onClick={addSource} style={{ boxShadow: "none" }}>Save source</button>

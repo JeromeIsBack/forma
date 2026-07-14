@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Icon } from "../components/ui.jsx";
 import { PageHead } from "./GymPage.jsx";
 import { QuickAddSource } from "../components/QuickAddSource.jsx";
-import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, EXERCISE_LIBRARY, exercisesForSplit, exerciseHasData, presetContents, uid } from "../lib/store.js";
+import { getSplits, weeklyTarget, SPLIT_PALETTE, clamp, EXERCISE_TYPES, EXERCISE_LIBRARY, exercisesForSplit, exerciseHasData, presetContents, uid, SOURCE_TYPES, allTypes } from "../lib/store.js";
 
 export default function TrainingPage({ state, update, go, onMenu }) {
   const splits = getSplits(state);
@@ -201,6 +201,9 @@ function PresetBuilder({ state, update }) {
 
   return (
     <>
+      <div className="section-label">Protein categories</div>
+      <CategoryManager state={state} update={update} />
+
       <div className="section-label">Meal presets</div>
       {presets.length > 0 && (
         <div className="card" style={{ marginBottom: 12 }}>
@@ -254,7 +257,7 @@ function PresetBuilder({ state, update }) {
 
         {q && (
           <div style={{ marginBottom: 12 }}>
-            <QuickAddSource query={search} update={update} onAdded={(id) => { bump(id, 1); setSearch(""); }} />
+            <QuickAddSource query={search} update={update} state={state} onAdded={(id) => { bump(id, 1); setSearch(""); }} />
           </div>
         )}
 
@@ -264,5 +267,66 @@ function PresetBuilder({ state, update }) {
         </button>
       </div>
     </>
+  );
+}
+
+
+function CategoryManager({ state, update }) {
+  const [name, setName] = useState("");
+  const custom = state.customTypes || [];
+  const builtIn = SOURCE_TYPES.filter((t) => t !== "Other");
+
+  function add() {
+    const n = name.trim();
+    if (!n) return;
+    const exists = allTypes(state).some((t) => t.toLowerCase() === n.toLowerCase());
+    if (exists) { setName(""); return; }
+    update((s) => { if (!s.customTypes) s.customTypes = []; s.customTypes.push(n); return s; });
+    setName("");
+  }
+  function remove(t) {
+    const used = (state.sources || []).filter((x) => x.type === t).length;
+    const msg = used
+      ? `Delete “${t}”? ${used} source${used === 1 ? "" : "s"} will move to “Other”.`
+      : `Delete “${t}”?`;
+    if (!window.confirm(msg)) return;
+    update((s) => {
+      s.customTypes = (s.customTypes || []).filter((x) => x !== t);
+      (s.sources || []).forEach((x) => { if (x.type === t) x.type = "Other"; });
+      return s;
+    });
+  }
+
+  return (
+    <div className="card">
+      <div style={{ fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.5, marginBottom: 12 }}>
+        Your own categories for grouping and filtering protein sources — handy for things like “Leftovers” or “Meal prep”.
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 13 }}>
+        {builtIn.map((t) => (
+          <span key={t} style={{ padding: "6px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "var(--paper)", border: "1px solid var(--line)", color: "var(--text-3)" }}>{t}</span>
+        ))}
+        {custom.map((t) => {
+          const used = (state.sources || []).filter((x) => x.type === t).length;
+          return (
+            <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 8px 6px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "var(--violet)", color: "#fff" }}>
+              {t}
+              <span style={{ opacity: 0.75, fontWeight: 500 }}>{used}</span>
+              <button onClick={() => remove(t)} aria-label={`Delete ${t}`} style={{ display: "flex", alignItems: "center", color: "#fff", opacity: 0.85, padding: 0 }}>
+                <Icon name="x" size={13} />
+              </button>
+            </span>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "flex", gap: 9 }}>
+        <input className="input" placeholder="New category (e.g. Leftovers)" maxLength={18} value={name}
+          onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
+        <button onClick={add} disabled={!name.trim()} style={{ padding: "0 20px", flexShrink: 0, borderRadius: "var(--r-md)", background: name.trim() ? "var(--violet)" : "var(--line)", color: "#fff", fontFamily: "var(--display)", fontWeight: 600, fontSize: 14 }}>Add</button>
+      </div>
+      <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 8 }}>Grey ones are built in. Deleting a category moves its sources to “Other” — nothing is lost.</div>
+    </div>
   );
 }

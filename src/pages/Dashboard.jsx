@@ -4,7 +4,7 @@ import { MenuButton } from "../components/NavDrawer.jsx";
 import { FormaWordmark } from "../components/BoltLogo.jsx";
 import {
   today, weekKey, addDays, dayProtein, gymThisWeek, gymStreak,
-  proteinTarget, levelFromXp, levelName, weeklyTarget, ACHIEVEMENTS, tierFor, measurementDue,
+  proteinTarget, levelFromXp, levelName, weeklyTarget, ACHIEVEMENTS, tierFor, measurementDue, activeNudges, nextSplitFor,
 } from "../lib/store.js";
 
 const fade = (i = 0) => ({
@@ -33,7 +33,7 @@ function recentThree(state) {
   return recent.slice(0, 3);
 }
 
-export default function Dashboard({ state, go, onMenu }) {
+export default function Dashboard({ state, update, go, onMenu }) {
   const p = state.profile;
   const target = proteinTarget(p);
   const protein = Math.round(dayProtein(state, today()));
@@ -43,7 +43,17 @@ export default function Dashboard({ state, go, onMenu }) {
   const { level, into, need } = levelFromXp(state.xp);
   const xpPct = Math.round((into / need) * 100);
   const days = weekDays(state);
+  const loggedToday = !!state.gym[today()];
+  const nextUp = nextSplitFor(state);
+  const nudges = activeNudges(state);
   const medals = recentThree(state);
+  function dismissNudge(n) {
+    update((s) => {
+      if (!s.settings.dismissed) s.settings.dismissed = {};
+      s.settings.dismissed[n.key] = n.period;
+      return s;
+    });
+  }
   const dateLabel = new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
 
   return (
@@ -110,8 +120,39 @@ export default function Dashboard({ state, go, onMenu }) {
         <Tile onClick={() => go("progress")} bg="var(--accent)" icon="flame" label="Streak" big={String(streak)} hint={streak === 1 ? "week alive" : "weeks alive"} badge={state.freezes > 0 ? state.freezes : null} />
       </motion.div>
 
+      {nudges.length > 0 && (
+        <motion.div {...fade(3.5)} style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 14 }}>
+          {nudges.map((n) => (
+            <div key={n.key} className="card" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 13px", border: "1px solid var(--violet-soft)" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 11, flexShrink: 0, background: "var(--violet-soft)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name={n.icon} size={17} style={{ color: "var(--violet)" }} />
+              </div>
+              <button onClick={() => go(n.view)} style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                <div style={{ fontFamily: "var(--display)", fontWeight: 500, fontSize: 13.5 }}>{n.title}</div>
+                <div style={{ fontSize: 11.5, color: "var(--text-2)", lineHeight: 1.4, marginTop: 2 }}>{n.body}</div>
+                <div style={{ fontSize: 11.5, color: "var(--violet)", fontWeight: 600, marginTop: 4 }}>{n.cta} <Icon name="chevron-right" size={11} style={{ verticalAlign: -1 }} /></div>
+              </button>
+              <button onClick={() => dismissNudge(n)} aria-label="Dismiss" style={{ width: 26, height: 26, flexShrink: 0, alignSelf: "flex-start", color: "var(--text-3)" }}>
+                <Icon name="x" size={15} />
+              </button>
+            </div>
+          ))}
+        </motion.div>
+      )}
+
       <motion.div {...fade(4)} className="card" style={{ marginBottom: 14 }}>
-        <div className="eyebrow" style={{ marginBottom: 12 }}>This week</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div className="eyebrow">This week</div>
+          {nextUp && (
+            <button onClick={() => go("gym")} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 3, background: nextUp.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-2)" }}>
+                {loggedToday ? "Next up" : "Today"}: <span style={{ color: "var(--text)" }}>{nextUp.label}</span>
+              </span>
+              <Icon name="chevron-right" size={12} style={{ color: "var(--text-3)" }} />
+            </button>
+          )}
+        </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           {days.map((d, i) => (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
@@ -124,15 +165,19 @@ export default function Dashboard({ state, go, onMenu }) {
         </div>
       </motion.div>
 
-      <motion.button {...fade(5)} onClick={() => go("achievements")} style={{ width: "100%", textAlign: "left" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 2px 12px" }}>
+      <motion.div {...fade(5)} style={{ width: "100%" }}>
+        <button onClick={() => go("achievements")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", margin: "0 2px 12px" }}>
           <div className="eyebrow">Recent achievements</div>
           <span style={{ fontSize: 11, color: "var(--violet)", fontWeight: 600 }}>View all <Icon name="chevron-right" size={11} style={{ verticalAlign: -1 }} /></span>
-        </div>
+        </button>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 11 }}>
-          {medals.map((ach) => <Medal key={ach.id} ach={ach} t={tierFor(ach, state)} />)}
+          {medals.map((ach) => (
+            <button key={ach.id} onClick={() => go("achievements", ach.id)} style={{ width: "100%" }}>
+              <Medal ach={ach} t={tierFor(ach, state)} />
+            </button>
+          ))}
         </div>
-      </motion.button>
+      </motion.div>
     </div>
   );
 }
