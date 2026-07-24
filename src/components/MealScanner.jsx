@@ -3,15 +3,37 @@ import { Icon } from "./ui.jsx";
 import { parseScan, allTypes } from "../lib/store.js";
 
 // On-device OCR via Tesseract.js, loaded from CDN the first time it's needed.
+// Versions pinned + worker/core/lang paths given explicitly: the convenience
+// Tesseract.recognize() is deprecated in v5 and often fails to resolve its
+// worker on static hosts, so we use the createWorker() path instead.
+const TJS = "5.1.1";
+const TCORE = "5.1.1";
+
 function loadTesseract() {
   return new Promise((resolve, reject) => {
     if (window.Tesseract) return resolve(window.Tesseract);
     const sc = document.createElement("script");
-    sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    sc.src = `https://cdn.jsdelivr.net/npm/tesseract.js@${TJS}/dist/tesseract.min.js`;
     sc.onload = () => (window.Tesseract ? resolve(window.Tesseract) : reject(new Error("no global")));
     sc.onerror = () => reject(new Error("load failed"));
     document.head.appendChild(sc);
   });
+}
+
+async function ocrImage(file, onProgress) {
+  const T = await loadTesseract();
+  const worker = await T.createWorker("eng", 1, {
+    workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@${TJS}/dist/worker.min.js`,
+    corePath: `https://cdn.jsdelivr.net/npm/tesseract.js-core@${TCORE}`,
+    langPath: "https://tessdata.projectnaptha.com/4.0.0",
+    logger: (mm) => { if (mm.status === "recognizing text" && onProgress) onProgress(Math.round(mm.progress * 100)); },
+  });
+  try {
+    const { data } = await worker.recognize(file);
+    return data.text || "";
+  } finally {
+    await worker.terminate();
+  }
 }
 
 export function MealScanner({ state, onClose, celebrate, onLogSource, onLogGrams, onCreateSource }) {
@@ -42,13 +64,11 @@ export function MealScanner({ state, onClose, celebrate, onLogSource, onLogGrams
     if (!file) return;
     setBusy(true); setErr(""); setProg(0); setResult(null);
     try {
-      const T = await loadTesseract();
-      const { data } = await T.recognize(file, "eng", {
-        logger: (mm) => { if (mm.status === "recognizing text") setProg(Math.round(mm.progress * 100)); },
-      });
-      analyse(data.text || "");
-    } catch {
-      setErr("Couldn't run the scan. Check your connection (the engine downloads once), or use Paste text below.");
+      const text = await ocrImage(file, setProg);
+      if (!text.trim()) setErr("The scan came back empty — the text was probably too small or low-contrast. Try filling the frame with just the ingredients panel, or use Paste text below.");
+      else analyse(text);
+    } catch (e) {
+      setErr("Couldn't run the scan (the engine failed to load). Check your connection — it downloads once — or use Paste text below.");
     }
     setBusy(false);
   }
