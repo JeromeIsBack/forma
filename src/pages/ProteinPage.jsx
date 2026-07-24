@@ -7,6 +7,7 @@ import { today, addDays, dayProtein, proteinTarget, suggestProtein, allTypes, cl
 import { DateNav } from "../components/DateNav.jsx";
 import { QuickAddSource } from "../components/QuickAddSource.jsx";
 import { MealScanner } from "../components/MealScanner.jsx";
+import { BarcodeScanner } from "../components/BarcodeScanner.jsx";
 
 export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [search, setSearch] = useState("");
@@ -19,6 +20,7 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
   const [presetName, setPresetName] = useState("");
   const [date, setDate] = useState(today());
   const [scanning, setScanning] = useState(false);
+  const [barcoding, setBarcoding] = useState(false);
 
   const target = proteinTarget(state.profile);
   const total = Math.round(dayProtein(state, date));
@@ -204,15 +206,24 @@ export default function ProteinPage({ state, update, go, onMenu, celebrate }) {
         </button>
       </div>
 
-      <button onClick={() => setScanning(true)} style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "11px 13px", marginBottom: 10, borderRadius: "var(--r-md)", border: "1px solid var(--violet-soft)", background: "var(--violet-soft)", color: "var(--violet)", textAlign: "left" }}>
-        <Icon name="camera" size={17} />
-        <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>Scan a label to find protein</span>
-        <Icon name="chevron-right" size={16} />
-      </button>
+      <div style={{ display: "flex", gap: 9, marginBottom: 10 }}>
+        <button onClick={() => setBarcoding(true)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, padding: "12px 13px", borderRadius: "var(--r-md)", border: "1px solid var(--violet-soft)", background: "var(--violet-soft)", color: "var(--violet)", textAlign: "left" }}>
+          <Icon name="barcode" size={19} />
+          <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.2 }}>Scan barcode</span>
+        </button>
+        <button onClick={() => setScanning(true)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, padding: "12px 13px", borderRadius: "var(--r-md)", border: "1px solid var(--violet-soft)", background: "var(--violet-soft)", color: "var(--violet)", textAlign: "left" }}>
+          <Icon name="camera" size={19} />
+          <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.2 }}>Scan label</span>
+        </button>
+      </div>
 
       {scanning && (
         <MealScanner state={state} celebrate={celebrate} onClose={() => setScanning(false)}
           onLogSource={logServingFromScan} onLogGrams={addGramsFromScan} onCreateSource={createSourceFromScan} />
+      )}
+      {barcoding && (
+        <BarcodeScanner state={state} celebrate={celebrate} onClose={() => setBarcoding(false)}
+          onLogGrams={addGramsFromScan} onCreateSource={createSourceFromScan} />
       )}
 
       <div style={{ position: "relative", marginBottom: 10 }}>
